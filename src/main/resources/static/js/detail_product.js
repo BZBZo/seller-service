@@ -22,7 +22,7 @@ function deleteProduct(productId) {
         success: function(response) {
             if (response.success) {
                 alert(response.message);  // 성공 메시지
-                window.location.href = '/admin/product/list';  // 상품 목록 페이지로 리다이렉트
+                window.location.href = '/seller/product/list';  // 상품 목록 페이지로 리다이렉트
             } else {
                 alert(response.message);  // 실패 메시지
             }
