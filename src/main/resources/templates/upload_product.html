@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.js" crossorigin="anonymous"></script>
+    <script th:src="@{/js/upload_product.js}"></script>
+    <link th:href="@{/css/upload_product.css}" rel="stylesheet">
+    <link th:href="@{/css/heather.css}" rel="stylesheet">
+    <link th:href="@{/css/footer.css}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <title>상품등록 페이지</title>
+</head>
+<body class="product-registration-body">
+<header>
+    <div th:replace="~{fragments/navbar::navbar}"></div>
+</header>
+<main>
+    <form id="productForm" method="POST" th:action="@{/seller/product}" enctype="multipart/form-data" onsubmit="return false;">
+        <h2>상품등록</h2>
+        <div class="product-row">
+            <div class="product-col-md-4">
+                <div class="product-image-upload">
+                    <div class="product-image-placeholder">
+                        <img id="imagePreview" src="" alt="미리보기" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;" />
+                        <span id="placeholderText">권장 이미지 크기 <br>700 × 1040 픽셀</span>
+                    </div>
+                    <input type="file" id="mainPicture" name="mainPicture" accept="image/*" class="product-file-input" required onchange="previewMainImage(event)">
+                </div>
+            </div>
+            <div class="product-col-md-8">
+                <select id="category" name="category" class="product-select product-mt-2" required>
+                    <option value="">카테고리선택</option>
+                    <option value="tp">상의</option>
+                    <option value="jk">자켓</option>
+                    <option value="sk">스커트</option>
+                    <option value="pt">바지</option>
+                    <option value="et">잡화</option>
+                </select>
+
+                <input type="text" id="name" name="name" placeholder="상품명을 입력하세요" class="product-input product-mt-2" required>
+                <input type="number" id="price" name="price" placeholder="가격을 입력하세요" class="product-input product-mt-2" required>
+
+                <div class="product-mt-2">
+                    <label>공구 진행 상태:</label>
+                    <label>
+                        <input type="radio" name="isCong" value="false" checked onclick="toggleFields(false, this)"> 불가
+                    </label>
+                    <label>
+                        <input type="radio" name="isCong" value="true" onclick="toggleFields(true, this)"> 가능
+                    </label>
+
+                    <!-- 모집인원 및 할인율 -->
+                    <div class="input-fields hidden" id="extraFields">
+                        <label>
+                            모집인원
+                            <input type="number" name="people" id="people" value="0" placeholder="명">
+
+                        </label>
+                        <label>
+                            할인율
+                            <input type="number" name="discount" id="discount" value="0" placeholder="%">
+                        </label>
+                    </div>
+                    <!-- 숨겨진 condition 필드 -->
+                    <input type="hidden" id="condition" name="condition">
+                </div>
+
+                <input type="number" id="quantity" name="quantity" placeholder="재고 수량 입력하세요" class="product-input product-mt-2" required>
+            </div>
+        </div>
+        <div id="editor" style="height: 400px;"></div>
+        <textarea id="description" name="description" style="display:none;"></textarea>
+        <button class="product-button" type="button" onclick="submitForm()">상품 등록</button>
+    </form>
+</main>
+<footer>
+    <div class="footer-container">
+        <p>&copy; 2024 WeatherWear. All rights reserved.</p>
+        <ul>
+            <li><a href="#">개인정보 처리방침</a></li>
+            <li><a href="#">이용 약관</a></li>
+        </ul>
+    </div>
+</footer>
+
+<script>
+
+</script>
+</body>
+</html>
