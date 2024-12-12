@@ -1,0 +1,226 @@
+main {
+    padding: 66px;
+    /* margin-top: 40px; */
+    background-color: white;
+}
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+}
+
+td {
+    vertical-align: middle; /* 세로 정렬을 가운데로 */
+    text-align: center; /* 가로 정렬을 가운데로 */
+    white-space: nowrap; /* 텍스트가 셀 안에서 한 줄로 표시되도록 */
+}
+
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    width: 1000px;
+    text-align: center;
+}
+
+.progress-title {
+    align-items: center; /* 수직 정렬을 중앙으로 */
+}
+
+.step {
+    font-weight: bold; /* 단계 제목을 두껍게 */
+    color: black;
+}
+
+.step2 {
+    font-weight: bold; /* 단계 제목을 두껍게 */
+    color: gray;
+}
+
+.separator {
+    margin: 0 10px; /* 구분자 양쪽에 간격 추가 */
+}
+
+h3 {
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Table Styles */
+table {
+    border-collapse: collapse; /* 테이블 셀 간 경계선을 이어지게 함 */
+    width: 100%;
+    margin: 20px 0;
+    table-layout: fixed;
+}
+
+thead th {
+    padding: 10px;
+    border-top: 2px solid #333; /* 상단 두꺼운 선 */
+    border-bottom: 1px solid #333; /* 아래 얇은 선 */
+    text-align: center;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd; /* 나머지 줄 얇은 선 */
+    text-align: center;
+    border-left: none;
+    border-right: none;
+}
+
+tbody tr:last-child td {
+    border-bottom: 2px solid #333; /* 마지막 행의 하단 굵은 선 */
+}
+
+
+/* 첫 번째, 두 번째 칸 좁게 설정 */
+table th.th_1, table td:nth-child(1),
+table th.th_1, table td:nth-child(2) {
+    width: 10%;
+}
+
+/* 상품 정보 칸 넓게 설정 */
+table th.th_3, table td:nth-child(3) {
+    width: 96%;
+}
+
+/* 주문수량, 주문금액, 배송비 칸 넓이 설정 */
+table th.th_2, table td:nth-child(4),
+table th.th_2, table td:nth-child(5),
+table th.th_4, table td:nth-child(6) {
+    width: 15%;
+}
+
+
+
+
+input[type="checkbox"] {
+    transform: scale(1.2); /* 체크박스 크기 조절 */
+}
+
+td.product-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    white-space: nowrap;
+}
+
+td img {
+    max-width: 50px; /* 이미지 크기 조절 */
+    margin-bottom: 10px; /* 이미지와 텍스트 사이 간격 */
+}
+
+.product-info img {
+    width: 100px;
+    margin-right: 20px;
+}
+
+.product-details {
+    text-align: center;
+}
+
+.cart-actions {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+button {
+    padding: 10px;
+    font-size: 18px;
+}
+
+.delete-btn {
+    padding: 8px 16px;
+    background-color: #ccc;
+    color: black;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.summary {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.total-info p {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.order-btn a {
+    color: white; /* 링크 글자색 변경 */
+    text-decoration: none; /* 밑줄 제거 */
+}
+
+.order-btn {
+    color: white; /* 글씨 색상을 하얀색으로 설정 */
+    background-color: #000;
+}
+
+/* 모달 스타일 */
+.modal {
+    display: none; /* 숨김 */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.product-info {
+    display: flex;
+    justify-content: flex-start; /* 좌측 정렬 */
+    flex-direction: row; /* 가로 배치 */
+}
+
+.product-info img {
+    width: 100px; /* 이미지 크기 조정 */
+    height: auto;
+    margin-right: 20px; /* 이미지와 이름 사이 간격 추가 */
+}
+
+.product-details {
+    display: block;
+}
+
+/* 상품 이름과 세부 정보의 텍스트 정렬 */
+.product-details, .product-details a {
+    margin-left: 10px; /* 왼쪽에 간격 추가 */
+    text-align: left; /* 텍스트 왼쪽 정렬 */
+}
