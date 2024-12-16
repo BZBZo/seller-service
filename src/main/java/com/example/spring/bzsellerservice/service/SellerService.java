@@ -9,6 +9,8 @@ import com.example.spring.bzsellerservice.repository.CongdongRepository;
 import com.example.spring.bzsellerservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,24 +41,20 @@ public class SellerService {
 
     public Long save(ProdUploadRequestDTO dto) throws IOException {
 
-        // Product 저장
+        // 설명 필드 필터링 추가
+        String description = filterDescription(dto.getDescription());
+
         String mainPicturePath = saveFile(dto.getMainPicture());
+
         Product product = dto.toProduct();
         product.setMainPicturePath(mainPicturePath);
+        product.setDescription(description);
         product.setIsCong(dto.isCong());
         Product savedProduct = productRepository.save(product);
 
-        log.info("AdminService - condition: {}", dto.getCondition());
-        log.info("Product ID: {}", savedProduct.getId()); // Product 저장 결과 로그
+        log.info("Product saved with ID: {}", savedProduct.getId());
 
-        // Congdong 저장
-        if (dto.isCong() && dto.getCondition() != null) {
-            Congdong congdong = Congdong.create(savedProduct, dto.getCondition());
-            congdongRepository.save(congdong); // Congdong만 저장
-            log.info("Congdong saved for Product ID: " + savedProduct.getId());
-            log.info("Congdong condition: {}", congdong.getConditon()); // Congdong 조건 로그
-            log.info("Product-Congdong mapping: {}", congdong.getProduct().getId()); // 매핑 확인 로그
-        }
+        handleCongdong(savedProduct, false, dto.isCong(), dto.getCondition());
 
         return savedProduct.getId();
     }
@@ -80,13 +78,132 @@ public class SellerService {
         log.info("Congdong condition: {}", dto.getCondition());
     }
 
+    // description에 있는 html 태그 필터링
+    public String filterDescription(String description) {
+        if (description == null || description.isEmpty()) {
+            return ""; // 빈 값 처리
+        }
+        // 허용할 태그를 정의 (예: <p>, <img>, <a>)
+        Safelist safelist = Safelist.basicWithImages()
+                .addTags("p", "a") // 필요한 태그 추가
+                .addAttributes("a", "href", "target") // 링크 태그의 허용 속성 추가
+                .addAttributes("img", "src", "alt", "title"); // 이미지 태그의 허용 속성 추가
+
+        // HTML 파싱 및 클린 처리
+        return Jsoup.clean(description, safelist);
+    }
+
+
     public void updateProduct(Long id, ProdUploadRequestDTO dto) throws IOException {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+
+        boolean wasCong = existingProduct.isCong();
+        boolean isCong = dto.isCong();
+
         updateProductDetails(existingProduct, dto);
         productRepository.save(existingProduct);
-        log.info("Product updated with ID: " + existingProduct.getId());
-        log.info("Product updated with ID: " + existingProduct);
+
+        handleCongdong(existingProduct, wasCong, isCong, dto.getCondition());
+
+        log.info("Product updated with ID: {}", existingProduct.getId());
+    }
+
+    public ProdReadResponseDTO getProductDetails(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+
+        // Congdong 데이터 가져오기
+        Optional<Congdong> congdong = congdongRepository.findByProductId(id);
+        String condition = congdong.map(Congdong::getConditon).orElse("{1:0}"); // 기본값 설정
+
+        return ProdReadResponseDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(product.getPrice())
+                .quantity(product.getQuantity())
+                .category(product.getCategory())
+                .description(product.getDescription())
+                .mainPicturePath(product.getMainPicturePath())
+                .isCong(product.isCong())
+                .condition(condition) // 기본값 포함
+                .build();
+    }
+
+    // save와 updateProduct의 congdong 중복으로 인한 메서드
+    private void handleCongdong(Product product, boolean wasCong, boolean isCong, String condition) {
+        if (!wasCong && isCong) {
+            if (condition == null || condition.isEmpty()) {
+                throw new IllegalArgumentException("Condition must be provided when enabling Congdong.");
+            }
+            validateCondition(condition);
+            createCongdongIfNotExists(product.getId(), condition);
+        } else if (wasCong && !isCong) {
+            deleteCongdongByProductId(product.getId());
+        } else if (wasCong && isCong) {
+            if (condition != null && !condition.isEmpty()) {
+                validateCondition(condition);
+                updateCongdongCondition(product.getId(), condition);
+            } else {
+                log.info("Condition not provided for existing Congdong. No update performed.");
+            }
+        }
+    }
+
+    // 불가에서 가능으로 바꿀 때 congdong 생성
+    public void createCongdongIfNotExists(Long productId, String condition) {
+        Optional<Congdong> existingCongdong = congdongRepository.findByProductId(productId);
+        if (existingCongdong.isEmpty()) {
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + productId));
+            Congdong congdong = Congdong.create(product, condition);
+            congdongRepository.save(congdong);
+            log.info("Congdong created for Product ID: {}, Condition: {}", productId, condition);
+        }
+    }
+
+    // product id 따라 congdong 삭제
+    public void deleteCongdongByProductId(Long productId) {
+        congdongRepository.findByProductId(productId)
+                .ifPresent(congdong -> {
+                    congdongRepository.delete(congdong);
+                    log.info("Congdong deleted for Product ID: {}", productId);
+                });
+    }
+
+    // 모집인원:할인율 업데이트
+    public void updateCongdongCondition(Long productId, String condition) {
+        Congdong congdong = congdongRepository.findByProductId(productId)
+                .orElseThrow(() -> new IllegalArgumentException("No Congdong found for Product ID: " + productId));
+        congdong.setConditon(condition); // 새로운 조건으로 업데이트
+        congdongRepository.save(congdong);
+        log.info("Congdong updated for Product ID: {}, New Condition: {}", productId, condition);
+    }
+
+    private void validateCondition(String condition) {
+        if (condition == null || condition.isEmpty()) {
+            throw new IllegalArgumentException("Condition cannot be null or empty.");
+        }
+
+        // 조건 파싱
+        String[] parts = condition.replace("{", "").replace("}", "").split(":");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Condition must follow the format: {people:discount}");
+        }
+
+        try {
+            int people = Integer.parseInt(parts[0].trim());
+            int discount = Integer.parseInt(parts[1].trim());
+
+            if (people < 0) {
+                throw new IllegalArgumentException("The 'people' value in condition must be 0 or greater.");
+            }
+            if (discount < 0) {
+                throw new IllegalArgumentException("The 'discount' value in condition must be 0 or greater.");
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Condition values must be valid integers.");
+        }
     }
 
     private void updateProductDetails(Product product, ProdUploadRequestDTO dto) throws IOException {
@@ -97,8 +214,6 @@ public class SellerService {
         product.setCategory(dto.getCategory());
         product.setDescription(dto.getDescription());
         product.setIsCong(dto.isCong());
-
-
 
         // 새 메인 이미지가 있는 경우 처리
         if (dto.getMainPicture() != null && !dto.getMainPicture().isEmpty()) {

@@ -34,6 +34,7 @@ public class SellerApiController {
         log.info("DTO condition: {}", dto.getCondition()); // 값이 제대로 넘어오는지 확인
         try {
             // 전달된 DTO 값 확인
+            log.info("Description received: {}", dto.getDescription());
             log.info("Condition received: {}", dto.getCondition());
             // 상품 정보 로깅
             System.out.println("상품명 : " + dto.getName() + '\n'
@@ -137,22 +138,23 @@ public class SellerApiController {
         }
     }
 
-    @PutMapping("/update/{id}")  // 수정된 경로
+    @PutMapping("/update/{id}")
     public ResponseEntity<Map<String, Object>> updateProduct(@PathVariable Long id, @ModelAttribute ProdUploadRequestDTO dto) {
         Map<String, Object> response = new HashMap<>();
         try {
+            log.info("Update Request - ID: {}, DTO: {}", id, dto);
             sellerService.updateProduct(id, dto);
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error updating product with ID: {}", id, e);
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    @DeleteMapping("/detail_product/{id}")
+    @DeleteMapping("/detail/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         try {
             sellerService.deleteProductsByIds(Collections.singletonList(id));  // id를 리스트로 감싸서 전달

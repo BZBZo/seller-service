@@ -15,4 +15,5 @@ public class ProdReadResponseDTO {
     private String quantity;
     private String category;
     private boolean isCong;
+    private String condition; // condition 필드 추가
 }

@@ -17,7 +17,7 @@
     <div th:replace="~{fragments/navbar::navbar}"></div>
 </header>
 <main>
-    <form id="productForm" method="PUT" th:action="@{/admin/product/update/{id}(id=${product.id})}" enctype="multipart/form-data">
+    <form id="productForm" method="PUT" th:action="@{/seller/product/update/{id}(id=${product.id})}" enctype="multipart/form-data">
         <h2>상품 수정</h2>
         <div class="product-row">
             <div class="product-col-md-4">
@@ -64,17 +64,18 @@
                     <div class="input-fields hidden" id="extraFields">
                         <label>
                             모집인원
-                            <input type="number" name="people" id="people" value="0" placeholder="명">
-
+                            <input type="number" name="people" id="people" value="1" min="1" placeholder="명">
                         </label>
                         <label>
                             할인율
-                            <input type="number" name="discount" id="discount" value="0" placeholder="%">
+                            <input type="number" name="discount" id="discount" value="0" min="0" placeholder="%">
                         </label>
                     </div>
+
                     <!-- 숨겨진 condition 필드 -->
-                    <input type="hidden" id="condition" name="condition">
+                    <input type="hidden" id="condition" name="condition" th:value="${product.condition}">
                 </div>
+
             </div>
         </div>
 

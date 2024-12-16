@@ -5,7 +5,6 @@ import com.example.spring.bzsellerservice.dto.customer.CustomerUpdateRequestDTO;
 import com.example.spring.bzsellerservice.dto.customer.SignUpRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.entity.Customer;
-import com.example.spring.bzsellerservice.repository.CartRepository;
 import com.example.spring.bzsellerservice.repository.CustomerRepository;
 import com.example.spring.bzsellerservice.repository.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
-    private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final ObjectMapper objectMapper;
