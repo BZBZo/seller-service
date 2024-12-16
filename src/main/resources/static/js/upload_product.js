@@ -185,37 +185,35 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const conditionInput = document.querySelector('input[name="condition"]');
     const isCongInput = document.querySelector('input[name="isCong"]:checked');
     const peopleInput = document.querySelector('input[name="people"]');
     const discountInput = document.querySelector('input[name="discount"]');
     const extraFields = document.getElementById("extraFields");
 
+    const initializeCondition = () => {
+        const people = Math.max(parseInt(peopleInput?.value || 1, 10), 1); // 기본값 1, 최소값 검증
+        const discount = Math.max(parseInt(discountInput?.value || 0, 10), 0); // 기본값 0, 최소값 검증
+        conditionInput.value = `{${people}:${discount}}`;
+        console.log('Condition initialized:', conditionInput.value);
+    };
+
     if (isCongInput && isCongInput.value === "true") {
         extraFields.classList.remove("hidden");
-        if (conditionInput && peopleInput && discountInput) {
-            const people = peopleInput.value || 0;
-            const discount = discountInput.value || 0;
-            conditionInput.value = `{${people}:${discount}}`;
-            console.log('Initial Condition:', conditionInput.value);
-        }
+        initializeCondition();
     } else {
         extraFields.classList.add("hidden");
-        if (conditionInput) {
-            conditionInput.value = `{0:0}`;
-        }
+        if (conditionInput) conditionInput.value = `{0:0}`;
     }
 
     // Add Event Listeners for input changes
     if (peopleInput && discountInput) {
         const updateCondition = () => {
-            if (conditionInput) {
-                const people = peopleInput.value || 0;
-                const discount = discountInput.value || 0;
-                conditionInput.value = `{${people}:${discount}}`;
-                console.log('Updated Condition:', conditionInput.value);
-            }
+            const people = Math.max(parseInt(peopleInput?.value || 1, 10), 1);
+            const discount = Math.max(parseInt(discountInput?.value || 0, 10), 0);
+            conditionInput.value = `{${people}:${discount}}`;
+            console.log('Updated Condition:', conditionInput.value);
         };
 
         peopleInput.addEventListener('input', updateCondition);
@@ -228,66 +226,62 @@ function toggleFields(isVisible, element) {
     const peopleInput = document.querySelector('input[name="people"]');
     const discountInput = document.querySelector('input[name="discount"]');
 
-    // 로그 출력
-    console.log(`선택한 공구 진행 상태: ${element.value}`); // HTML 요소 값
-    console.log(`공구 진행 상태: ${isVisible ? "가능" : "불가"}`); // 논리 상태
+    console.log(`Selected Cong State: ${element.value}, Visible: ${isVisible}`);
 
     if (isVisible) {
-        // 보이기 (값 초기화)
-        if (peopleInput) peopleInput.value = '0'; // 모집인원 초기화
-        if (discountInput) discountInput.value = '0'; // 할인율 초기화
         extraFields.classList.remove("hidden");
+        peopleInput.value = '1'; // 최소값 설정
+        discountInput.value = '0';
     } else {
-        // 숨기기
         extraFields.classList.add("hidden");
+        peopleInput.value = '';
+        discountInput.value = '';
     }
 }
 
 function submitForm() {
-
     const productForm = document.getElementById('productForm');
     const formData = new FormData(productForm);
+    const conditionField = document.getElementById('condition');
     const peopleInput = document.getElementById('people');
     const discountInput = document.getElementById('discount');
-    const conditionField = document.getElementById('condition');
 
-    // 모집인원과 할인율을 조합하여 condition 필드에 저장
-    const people = peopleInput?.value || 0; // 값이 없으면 기본값 0
-    const discount = discountInput?.value || 0; // 값이 없으면 기본값 0
-    conditionField.value = `{${people}:${discount}}`;
+    // Quill 에디터 내용 동기화
+    const descriptionValue = quill.root.innerHTML;
+    formData.set('description', descriptionValue); // FormData에 강제로 추가
+    console.log('Description value:', descriptionValue);
 
-    console.log('People:', peopleInput ? peopleInput.value : "없음");
-    console.log('Discount:', discountInput ? discountInput.value : "없음");
+    // Condition 필드 업데이트
+    const updateConditionField = (peopleInput, discountInput, conditionField) => {
+        const people = Math.max(parseInt(peopleInput?.value || 1, 10), 1);
+        const discount = Math.max(parseInt(discountInput?.value || 0, 10), 0);
+        conditionField.value = `{${people}:${discount}}`;
+    };
+
+    updateConditionField(peopleInput, discountInput, conditionField);
+
     console.log('Condition:', conditionField.value);
+    console.log(...formData.entries()); // FormData 확인
 
-    // description 추가
-    const description = document.querySelector('#editor .ql-editor').innerHTML;
-    formData.append('description', description);
-
-    // 서버로 데이터 전송
+    // 서버에 데이터 전송
     fetch('/seller/product', {
         method: 'POST',
         body: formData,
     })
         .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then((data) => {
             if (data.url) {
                 alert('상품이 성공적으로 등록되었습니다!');
-                console.log('서버 응답:', data);
-                console.log('서버에서 반환된 URL:', data.url);
-                window.location.href = data.url; // 서버가 제공한 URL로 이동 리스트 페이지
+                window.location.href = data.url;
             } else {
                 alert('응답 URL이 없습니다.');
             }
         })
         .catch((error) => {
-            console.error('상품 등록 중 오류 발생:', error);
-            alert('상품 등록 중 문제가 발생했습니다. 다시 시도해주세요.');
-            window.location.href = '/seller/product/upload';
+            console.error('Error occurred during product registration:', error);
+            alert('상품 등록 중 문제가 발생했습니다. 관리자에게 문의하세요.');
         });
 }

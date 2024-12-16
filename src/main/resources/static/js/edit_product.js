@@ -121,44 +121,108 @@ document.addEventListener('DOMContentLoaded', function() {
     window.submitForm = submitForm;
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
+    const conditionInput = document.querySelector('input[name="condition"]');
+    const peopleInput = document.querySelector('input[name="people"]');
+    const discountInput = document.querySelector('input[name="discount"]');
     const isCongRadio = document.querySelector('input[name="isCong"]:checked');
-    toggleFields(isCongRadio.value === 'true', isCongRadio);
-});
 
-quill = new Quill('#editor', {
-    theme: 'snow',
-    modules: {
-        toolbar: [['bold', 'italic', 'underline'], ['image']]
+    // 초기화: condition 값 처리
+    if (conditionInput && conditionInput.value) {
+        const conditionParts = conditionInput.value.replace(/[{}]/g, '').split(':');
+        const people = conditionParts[0] || 1;
+        const discount = conditionParts[1] || 0;
+
+        peopleInput.value = people;
+        discountInput.value = discount;
+
+        console.log(`Initialized condition - People: ${people}, Discount: ${discount}`);
+    } else {
+        console.warn('Condition input is empty or not found.');
     }
+
+    // 추가 필드 표시/숨김
+    if (isCongRadio) {
+        toggleFields(isCongRadio.value === 'true', isCongRadio);
+    } else {
+        console.warn('isCongRadio not found or not checked.');
+    }
+
+    // condition 업데이트 함수
+    const updateCondition = () => {
+        const people = parseInt(peopleInput.value, 10) || 1;
+        const discount = parseInt(discountInput.value, 10) || 0;
+
+        conditionInput.value = `{${Math.max(people, 1)}:${Math.max(discount, 0)}}`;
+        console.log(`Condition updated: ${conditionInput.value}`); // 확인용 로그
+    };
+
+    // 이벤트 리스너 등록
+    [peopleInput, discountInput].forEach(input => {
+        if (input) {
+            input.addEventListener('input', updateCondition);
+        } else {
+            console.warn(`${input?.name || 'Input'} field not found.`);
+        }
+    });
 });
-quill.root.innerHTML = document.querySelector('#description').value;
 
 function toggleFields(isVisible, element) {
     const extraFields = document.getElementById("extraFields");
     const peopleInput = document.querySelector('input[name="people"]');
     const discountInput = document.querySelector('input[name="discount"]');
+    const conditionField = document.getElementById('condition');
 
-    // 로그 출력
-    console.log(`선택한 공구 진행 상태: ${element.value}`); // HTML 요소 값
-    console.log(`공구 진행 상태: ${isVisible ? "가능" : "불가"}`); // 논리 상태
-
+    console.log(`Selected: ${element.value}, Visible: ${isVisible}`);
 
     if (isVisible) {
-        // 보이기 (값 초기화)
-        peopleInput.value = ''; // 모집인원 초기화
-        discountInput.value = ''; // 할인율 초기화
         extraFields.classList.remove("hidden");
+
+        // condition 값이 이미 설정된 경우 초기화하지 않음
+        if (conditionField.value && conditionField.value !== '{0:0}') {
+            const condition = conditionField.value.replace(/[{}]/g, '').split(':');
+            peopleInput.value = condition[0] || 1;
+            discountInput.value = condition[1] || 0;
+        } else {
+            peopleInput.value = '1';
+            discountInput.value = '0';
+            conditionField.value = `{1:0}`;
+        }
+
+        console.log(`Current Condition Value: ${conditionField.value}`);
     } else {
-        // 숨기기
         extraFields.classList.add("hidden");
+        peopleInput.value = '';
+        discountInput.value = '';
+        conditionField.value = `{0:0}`;
     }
 }
 
 function submitForm() {
-    const descriptionField = document.querySelector('#description');
-    descriptionField.value = quill.root.innerHTML; // 에디터 내용 반영
-    console.log(product);
-    const productForm = document.getElementById('productForm');
-    productForm.submit(); // 폼 제출
+    const formData = new FormData(document.getElementById('productForm'));
+    console.log('FormData:', ...formData.entries());
+
+    // 확인용 로그
+    console.log('Condition:', formData.get('condition'));
+
+    fetch('/seller/product/update', {
+        method: 'PUT',
+        body: formData,
+    })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('상품이 성공적으로 수정되었습니다!');
+                window.location.href = '/seller/product/list';
+            } else {
+                alert('상품 수정 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('상품 수정 중 오류가 발생했습니다.');
+        });
 }
