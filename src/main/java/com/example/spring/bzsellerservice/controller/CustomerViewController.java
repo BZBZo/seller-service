@@ -4,7 +4,6 @@ import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.entity.Customer;
 import com.example.spring.bzsellerservice.service.CustomerService;
 import com.example.spring.bzsellerservice.service.ProductService;
-import com.example.spring.bzsellerservice.service.ReviewService;
 import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,7 +26,6 @@ public class CustomerViewController {
 
     private final CustomerService customerService;
     private final ProductService productService;
-    private final ReviewService reviewService;
 
     @GetMapping("/join")
     public String signUp() {
@@ -44,7 +42,6 @@ public class CustomerViewController {
     public String detail(HttpSession session, @PathVariable Long id, Model model) {
         // 상품 정보 찾기
         ProdReadResponseDTO product = productService.findById(id);
-        Integer count = reviewService.countReview(id);
 
         // mainPicture 경로에서 역슬래시(`\`)를 슬래시(`/`)로 변경
         if (product.getMainPicturePath() != null) {
@@ -56,7 +53,6 @@ public class CustomerViewController {
         Customer customer = (session != null) ? customerService.findBySession(session) : null;
         model.addAttribute("product", product);
         model.addAttribute("customer", customer);
-        model.addAttribute("reviewCount", count);
 
         return "detail";
     }

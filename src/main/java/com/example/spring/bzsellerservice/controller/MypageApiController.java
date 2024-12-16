@@ -4,7 +4,6 @@ import com.example.spring.bzsellerservice.config.security.CustomUserDetails;
 import com.example.spring.bzsellerservice.dto.UrlResponseDTO;
 import com.example.spring.bzsellerservice.dto.customer.CustomerDeleteRequestDTO;
 import com.example.spring.bzsellerservice.dto.customer.CustomerUpdateRequestDTO;
-import com.example.spring.bzsellerservice.service.CartService;
 import com.example.spring.bzsellerservice.service.CustomerService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.Map;
 public class MypageApiController {
 
     private final CustomerService customerService;
-    private final CartService cartService;
 
     @PutMapping("/edit/{id}")
     public ResponseEntity<UrlResponseDTO> update(
@@ -62,24 +60,6 @@ public class MypageApiController {
         session.invalidate();
 
         return "redirect:/home";
-    }
-
-    @DeleteMapping("/shoppingcart")
-    public ResponseEntity<Map<String, String>> deleteFromCart(@RequestBody List<Map<String, Object>> selectedProducts) {
-        try {
-            Long customerId = getCurrentCustomerId();
-            List<Long> productIds = selectedProducts.stream()
-                    .map(product -> Long.parseLong(product.get("productId").toString()))
-                    .toList();
-            cartService.removeFromCart(customerId, productIds);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "선택한 제품이 삭제되었습니다.");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace(); // 예외 로그 출력
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("message", "서버 오류 발생"));
-        }
     }
 
     private Long getCurrentCustomerId() {

@@ -56,8 +56,17 @@
                     <span th:text="${product.isCong == true ? '공구 가능' : '공구 불가'}"></span>
                 </div>
 
-                <!-- 숨겨진 필드로 공구 진행 상태 값 추가 -->
-                <input type="hidden" id="isCong" th:value="${product.isCong}">
+                <!-- 공구 진행 상태 값 (숨겨진 필드) -->
+                <input type="hidden" id="isCong" th:value="${product.isCong}" />
+
+                <!-- 모집 인원 및 할인율 -->
+                <div id="congdongInfo" class="product-mt-2" th:if="${product.isCong}">
+                    <span id="peopleCount"></span> <!-- 모집 인원 -->
+                    <span id="discountRate"></span> <!-- 할인율 -->
+                </div>
+
+                <!-- condition 값 숨겨서 JS가 사용 -->
+                <input type="hidden" name="condition" th:value="${product.condition}">
 
             </div>
         </div>
