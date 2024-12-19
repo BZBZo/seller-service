@@ -60,9 +60,15 @@
                 <input type="hidden" id="isCong" th:value="${product.isCong}" />
 
                 <!-- 모집 인원 및 할인율 -->
+<!--                <div id="congdongInfo" class="product-mt-2" th:if="${product.isCong}">-->
+<!--                    <span id="peopleCount"></span> &lt;!&ndash; 모집 인원 &ndash;&gt;-->
+<!--                    <span id="discountRate"></span> &lt;!&ndash; 할인율 &ndash;&gt;-->
+<!--                </div>-->
+
                 <div id="congdongInfo" class="product-mt-2" th:if="${product.isCong}">
-                    <span id="peopleCount"></span> <!-- 모집 인원 -->
-                    <span id="discountRate"></span> <!-- 할인율 -->
+                    <div th:each="pair : ${#strings.arraySplit(product.condition, ',')}">
+                        <span th:text="|모집 인원: ${#strings.arraySplit(pair.replaceAll('[{}]', ''), ':')[0]}명, 할인율: ${#strings.arraySplit(pair.replaceAll('[{}]', ''), ':')[1]}%|"></span>
+                    </div>
                 </div>
 
                 <!-- condition 값 숨겨서 JS가 사용 -->

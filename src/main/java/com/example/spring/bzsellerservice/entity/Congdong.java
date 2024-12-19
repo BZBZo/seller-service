@@ -28,12 +28,12 @@ public class Congdong {
     private Product product;
 
     @Column(columnDefinition = "TEXT")
-    private String conditon; // 모집인원 및 할인율 정보 JSON으로 저장
+    private String conditions; // 모집인원 및 할인율 정보 JSON으로 저장
 
     public static Congdong create(Product product, String condition) {
         Congdong congdong = new Congdong();
         congdong.setProduct(product);
-        congdong.setConditon(condition);
+        congdong.setConditions(condition);
         return congdong;
     }
 

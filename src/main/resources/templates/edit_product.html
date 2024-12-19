@@ -61,15 +61,21 @@
                     </label>
 
                     <!-- 모집인원 및 할인율 -->
-                    <div class="input-fields hidden" id="extraFields">
-                        <label>
-                            모집인원
-                            <input type="number" name="people" id="people" value="1" min="1" placeholder="명">
-                        </label>
-                        <label>
-                            할인율
-                            <input type="number" name="discount" id="discount" value="0" min="0" placeholder="%">
-                        </label>
+                    <div class="condition-container product-mt-2">
+                        <h4>공동구매 조건 입력</h4>
+                        <table id="conditionTable" class="condition-table">
+                            <thead>
+                            <tr>
+                                <th>모집 인원</th>
+                                <th>할인율</th>
+                                <th>삭제</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- 기존 condition 값에서 필드 자동 생성 -->
+                            </tbody>
+                        </table>
+                        <button type="button" id="addConditionBtn" class="add-button">+ 조건 추가</button>
                     </div>
 
                     <!-- 숨겨진 condition 필드 -->
