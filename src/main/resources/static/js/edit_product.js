@@ -121,96 +121,152 @@ document.addEventListener('DOMContentLoaded', function() {
     window.submitForm = submitForm;
 });
 
-document.addEventListener('DOMContentLoaded', function () {
+function toggleFields(isVisible) {
+    const conditionTable = document.querySelector('.condition-container');
+    const addConditionBtn = document.getElementById('addConditionBtn');
+    const conditionTableBody = document.querySelector('#conditionTable tbody');
     const conditionInput = document.querySelector('input[name="condition"]');
-    const peopleInput = document.querySelector('input[name="people"]');
-    const discountInput = document.querySelector('input[name="discount"]');
-    const isCongRadio = document.querySelector('input[name="isCong"]:checked');
 
-    // 초기화: condition 값 처리
-    if (conditionInput && conditionInput.value) {
-        const conditionParts = conditionInput.value.replace(/[{}]/g, '').split(':');
-        const people = conditionParts[0] || 1;
-        const discount = conditionParts[1] || 0;
-
-        peopleInput.value = people;
-        discountInput.value = discount;
-
-        console.log(`Initialized condition - People: ${people}, Discount: ${discount}`);
-    } else {
-        console.warn('Condition input is empty or not found.');
+    // 방어 코드: 필요한 DOM 요소가 없으면 함수 종료
+    if (!conditionTable || !addConditionBtn || !conditionTableBody || !conditionInput) {
+        console.error("toggleFields: 필요한 DOM 요소가 없습니다.");
+        return;
     }
-
-    // 추가 필드 표시/숨김
-    if (isCongRadio) {
-        toggleFields(isCongRadio.value === 'true', isCongRadio);
-    } else {
-        console.warn('isCongRadio not found or not checked.');
-    }
-
-    // condition 업데이트 함수
-    const updateCondition = () => {
-        const people = parseInt(peopleInput.value, 10) || 1;
-        const discount = parseInt(discountInput.value, 10) || 0;
-
-        conditionInput.value = `{${Math.max(people, 1)}:${Math.max(discount, 0)}}`;
-        console.log(`Condition updated: ${conditionInput.value}`); // 확인용 로그
-    };
-
-    // 이벤트 리스너 등록
-    [peopleInput, discountInput].forEach(input => {
-        if (input) {
-            input.addEventListener('input', updateCondition);
-        } else {
-            console.warn(`${input?.name || 'Input'} field not found.`);
-        }
-    });
-});
-
-function toggleFields(isVisible, element) {
-    const extraFields = document.getElementById("extraFields");
-    const peopleInput = document.querySelector('input[name="people"]');
-    const discountInput = document.querySelector('input[name="discount"]');
-    const conditionField = document.getElementById('condition');
-
-    console.log(`Selected: ${element.value}, Visible: ${isVisible}`);
 
     if (isVisible) {
-        extraFields.classList.remove("hidden");
+        conditionTable.style.display = "block";
+        addConditionBtn.style.display = "inline-block";
 
-        // condition 값이 이미 설정된 경우 초기화하지 않음
-        if (conditionField.value && conditionField.value !== '{0:0}') {
-            const condition = conditionField.value.replace(/[{}]/g, '').split(':');
-            peopleInput.value = condition[0] || 1;
-            discountInput.value = condition[1] || 0;
-        } else {
-            peopleInput.value = '1';
-            discountInput.value = '0';
-            conditionField.value = `{1:0}`;
+        if (conditionTableBody.children.length === 0) {
+            addConditionRow(1, 0);
         }
-
-        console.log(`Current Condition Value: ${conditionField.value}`);
     } else {
-        extraFields.classList.add("hidden");
-        peopleInput.value = '';
-        discountInput.value = '';
-        conditionField.value = `{0:0}`;
+        conditionTable.style.display = "none";
+        addConditionBtn.style.display = "none";
+        conditionTableBody.innerHTML = "";
+        conditionInput.value = "";
     }
 }
 
-function submitForm() {
-    const formData = new FormData(document.getElementById('productForm'));
-    console.log('FormData:', ...formData.entries());
+function addConditionRow(people = 1, discount = 0) {
+    const conditionTableBody = document.querySelector('#conditionTable tbody');
+    const conditionInput = document.querySelector('input[name="condition"]');
 
-    // 확인용 로그
-    console.log('Condition:', formData.get('condition'));
+    if (!conditionTableBody || !conditionInput) {
+        console.error("addConditionRow: 필요한 DOM 요소가 없습니다.");
+        return;
+    }
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="people-input" value="${people}" min="1"></td>
+        <td><input type="number" class="discount-input" value="${discount}" min="0"></td>
+        <td><button type="button" class="remove-row">삭제</button></td>
+    `;
+
+    row.querySelector('.remove-row').addEventListener('click', () => {
+        row.remove();
+        updateCondition();
+    });
+
+    row.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateCondition);
+    });
+
+    conditionTableBody.appendChild(row);
+}
+
+// 전역으로 선언
+function updateCondition() {
+    const conditionTableBody = document.querySelector('#conditionTable tbody');
+    const conditionInput = document.querySelector('input[name="condition"]');
+
+    if (!conditionTableBody || !conditionInput) {
+        console.error("updateCondition: 필요한 DOM 요소가 없습니다.");
+        return;
+    }
+
+    const rows = conditionTableBody.querySelectorAll('tr');
+    const conditionArray = Array.from(rows).map(row => {
+        const people = row.querySelector('.people-input').value || 1;
+        const discount = row.querySelector('.discount-input').value || 0;
+        return `{${people}:${discount}}`;
+    });
+
+    conditionInput.value = conditionArray.join(',');
+    console.log('Updated condition:', conditionInput.value);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const conditionInput = document.querySelector('input[name="condition"]');
+    const addConditionBtn = document.getElementById('addConditionBtn');
+
+    // 방어 코드: 필요한 DOM 요소가 없으면 함수 종료
+    if (!conditionInput || !addConditionBtn) {
+        console.error("초기화 과정에서 필요한 DOM 요소가 없습니다.");
+        return;
+    }
+
+    // 기존 condition 값을 읽어와 테이블 초기화
+    if (conditionInput.value.trim()) {
+        conditionInput.value.split(',').forEach(cond => {
+            const [people, discount] = cond.replace(/[{}]/g, '').split(':');
+            addConditionRow(people, discount);
+        });
+    } else {
+        addConditionRow(1, 0);
+        updateCondition();
+    }
+
+    const isCongCheckedElement = document.querySelector('input[name="isCong"]:checked');
+    const isCongChecked = isCongCheckedElement ? isCongCheckedElement.value === "true" : false;
+    toggleFields(isCongChecked);
+
+    addConditionBtn.addEventListener("click", () => {
+        addConditionRow(1, 0);
+        updateCondition();
+    });
+});
+
+// 입력값 검증 함수
+function validateInputs() {
+    const conditionInput = document.querySelector('input[name="condition"]');
+    const description = document.querySelector('#description').value.trim();
+
+    if (!conditionInput.value.trim()) {
+        alert("조건을 입력하세요.");
+        console.error("조건 없음:", conditionInput.value);
+        return false;
+    }
+
+    if (!description) {
+        alert("설명을 입력하세요.");
+        console.error("설명 없음:", description);
+        return false;
+    }
+
+    return true;
+}
+
+// 폼 제출 함수
+function submitForm() {
+    if (!validateInputs()) {
+        // 입력값이 유효하지 않은 경우 함수 종료
+        return;
+    }
+
+    const formData = new FormData(document.getElementById('productForm'));
 
     fetch('/seller/product/update', {
         method: 'PUT',
         body: formData,
     })
         .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                alert("서버 오류가 발생했습니다.");
+                return;
+            }
             return response.json();
         })
         .then(data => {
@@ -218,11 +274,12 @@ function submitForm() {
                 alert('상품이 성공적으로 수정되었습니다!');
                 window.location.href = '/seller/product/list';
             } else {
+                console.error("서버 응답 실패:", data.message);
                 alert('상품 수정 중 오류가 발생했습니다.');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('상품 수정 중 오류가 발생했습니다.');
+            console.error("Network Error:", error);
+            alert('네트워크 오류가 발생했습니다.');
         });
 }

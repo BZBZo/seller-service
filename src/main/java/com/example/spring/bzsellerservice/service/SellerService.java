@@ -83,30 +83,65 @@ public class SellerService {
         if (description == null || description.isEmpty()) {
             return ""; // 빈 값 처리
         }
-        // 허용할 태그를 정의 (예: <p>, <img>, <a>)
+
+        // 허용할 태그 정의
         Safelist safelist = Safelist.basicWithImages()
-                .addTags("p", "a") // 필요한 태그 추가
+                .addTags("a") // 필요한 태그 추가
                 .addAttributes("a", "href", "target") // 링크 태그의 허용 속성 추가
                 .addAttributes("img", "src", "alt", "title"); // 이미지 태그의 허용 속성 추가
 
         // HTML 파싱 및 클린 처리
-        return Jsoup.clean(description, safelist);
+        String cleanedDescription = Jsoup.clean(description, safelist);
+
+        // 불필요한 태그 제거: <p>, <br> 등만 남은 경우
+        cleanedDescription = cleanedDescription.replaceAll("(?i)<(br|p|/p|\\s)*?>", "").trim();
+
+        // 결과가 빈 문자열이면 빈 값 반환
+        return cleanedDescription.isEmpty() ? "" : cleanedDescription;
     }
 
 
     public void updateProduct(Long id, ProdUploadRequestDTO dto) throws IOException {
+        // ID 유효성 검증
         Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 상품 ID입니다: " + id));
+
+        // 설명 필드 필터링
+        String filteredDescription = filterDescription(dto.getDescription());
+
+        // 필수 입력값 검증
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("상품명은 필수 입력 항목입니다.");
+        }
+        if (dto.getPrice() <= 0) {
+            throw new IllegalArgumentException("가격은 0보다 커야 합니다.");
+        }
+        if (Integer.parseInt(dto.getQuantity()) < 0) {
+            throw new IllegalArgumentException("수량은 0 이상이어야 합니다.");
+        }
+        if (dto.isCong()) { // 공구 가능 상태일 때만 검증
+            if (dto.getCondition() == null || dto.getCondition().trim().isEmpty()) {
+                throw new IllegalArgumentException("조건 값이 비어 있습니다.");
+            }
+            validateConditions(dto.getCondition());
+        }
+        if (dto.getDescription() == null || dto.getDescription().trim().isEmpty()) {
+            throw new IllegalArgumentException("설명은 필수 입력 항목입니다.");
+        }
 
         boolean wasCong = existingProduct.isCong();
         boolean isCong = dto.isCong();
 
-        updateProductDetails(existingProduct, dto);
+        // 상품 상세 정보 업데이트
+        updateProductDetails(existingProduct, dto, filteredDescription);
+
+        // 상품 저장
         productRepository.save(existingProduct);
 
+        // 공구 조건 처리
         handleCongdong(existingProduct, wasCong, isCong, dto.getCondition());
 
-        log.info("Product updated with ID: {}", existingProduct.getId());
+        log.info("상품이 성공적으로 업데이트되었습니다. ID: {}", existingProduct.getId());
     }
 
     public ProdReadResponseDTO getProductDetails(Long id) {
@@ -115,7 +150,7 @@ public class SellerService {
 
         // Congdong 데이터 가져오기
         Optional<Congdong> congdong = congdongRepository.findByProductId(id);
-        String condition = congdong.map(Congdong::getConditon).orElse("{1:0}"); // 기본값 설정
+        String condition = congdong.map(Congdong::getConditions).orElse("{1:0}"); // 기본값 설정
 
         return ProdReadResponseDTO.builder()
                 .id(product.getId())
@@ -132,20 +167,33 @@ public class SellerService {
 
     // save와 updateProduct의 congdong 중복으로 인한 메서드
     private void handleCongdong(Product product, boolean wasCong, boolean isCong, String condition) {
+        // 공구 활성화로 변경되었을 때 조건 값 검증
         if (!wasCong && isCong) {
-            if (condition == null || condition.isEmpty()) {
-                throw new IllegalArgumentException("Condition must be provided when enabling Congdong.");
+            if (condition == null || condition.trim().isEmpty()) {
+                throw new IllegalArgumentException("공구를 활성화하려면 조건이 필요합니다.");
             }
-            validateCondition(condition);
-            createCongdongIfNotExists(product.getId(), condition);
-        } else if (wasCong && !isCong) {
-            deleteCongdongByProductId(product.getId());
-        } else if (wasCong && isCong) {
-            if (condition != null && !condition.isEmpty()) {
-                validateCondition(condition);
+            validateConditions(condition);
+
+            // 기존 공구 데이터 확인 후 처리
+            Optional<Congdong> existingCongdong = congdongRepository.findByProductId(product.getId());
+            if (existingCongdong.isPresent()) {
                 updateCongdongCondition(product.getId(), condition);
             } else {
-                log.info("Condition not provided for existing Congdong. No update performed.");
+                createCongdongIfNotExists(product.getId(), condition);
+            }
+        }
+        // 공구 비활성화로 변경되었을 때
+        else if (wasCong && !isCong) {
+            deleteCongdongByProductId(product.getId());
+            return; // 공구가 아닌 경우 추가 로직 생략
+        }
+        // 공구 상태 유지하면서 조건 업데이트
+        else if (wasCong && isCong) {
+            if (condition != null && !condition.trim().isEmpty()) {
+                validateConditions(condition);
+                updateCongdongCondition(product.getId(), condition);
+            } else {
+                log.info("공구 조건이 제공되지 않아 업데이트가 수행되지 않았습니다.");
             }
         }
     }
@@ -175,44 +223,43 @@ public class SellerService {
     public void updateCongdongCondition(Long productId, String condition) {
         Congdong congdong = congdongRepository.findByProductId(productId)
                 .orElseThrow(() -> new IllegalArgumentException("No Congdong found for Product ID: " + productId));
-        congdong.setConditon(condition); // 새로운 조건으로 업데이트
+        congdong.setConditions(condition); // 새로운 조건으로 업데이트
         congdongRepository.save(congdong);
         log.info("Congdong updated for Product ID: {}, New Condition: {}", productId, condition);
     }
 
-    private void validateCondition(String condition) {
-        if (condition == null || condition.isEmpty()) {
+    private void validateConditions(String conditions) {
+        if (conditions == null || conditions.isEmpty()) {
             throw new IllegalArgumentException("Condition cannot be null or empty.");
         }
 
-        // 조건 파싱
-        String[] parts = condition.replace("{", "").replace("}", "").split(":");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Condition must follow the format: {people:discount}");
-        }
+        String[] conditionArray = conditions.split(","); // 콤마로 나눠서 각 조건 검증
+        for (String condition : conditionArray) {
+            // 각 조건을 검증
+            if (!condition.matches("\\{\\d+:\\d+\\}")) {
+                throw new IllegalArgumentException("Condition must follow the format: {people:discount}");
+            }
 
-        try {
+            String[] parts = condition.replace("{", "").replace("}", "").split(":");
             int people = Integer.parseInt(parts[0].trim());
             int discount = Integer.parseInt(parts[1].trim());
 
-            if (people < 0) {
-                throw new IllegalArgumentException("The 'people' value in condition must be 0 or greater.");
+            if (people < 1) {
+                throw new IllegalArgumentException("The 'people' value must be greater than 0.");
             }
             if (discount < 0) {
-                throw new IllegalArgumentException("The 'discount' value in condition must be 0 or greater.");
+                throw new IllegalArgumentException("The 'discount' value must be 0 or greater.");
             }
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Condition values must be valid integers.");
         }
     }
 
-    private void updateProductDetails(Product product, ProdUploadRequestDTO dto) throws IOException {
+    private void updateProductDetails(Product product, ProdUploadRequestDTO dto, String filteredDescription) throws IOException {
         // 기본 필드 업데이트
         product.setName(dto.getName());
         product.setPrice(dto.getPrice());
         product.setQuantity(dto.getQuantity());
         product.setCategory(dto.getCategory());
-        product.setDescription(dto.getDescription());
+        product.setDescription(filteredDescription); // 필터링된 설명 적용
         product.setIsCong(dto.isCong());
 
         // 새 메인 이미지가 있는 경우 처리
