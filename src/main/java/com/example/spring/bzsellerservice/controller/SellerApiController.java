@@ -30,7 +30,7 @@ public class SellerApiController {
     private final SellerService sellerService;
 
     @PostMapping
-    public ResponseEntity<ProdUploadResponseDTO> uploadProduct(@ModelAttribute ProdUploadRequestDTO dto) {
+    public ResponseEntity<ProdUploadResponseDTO> addProduct(@ModelAttribute ProdUploadRequestDTO dto) {
         log.info("DTO condition: {}", dto.getCondition()); // 값이 제대로 넘어오는지 확인
         try {
             // 전달된 DTO 값 확인
@@ -139,23 +139,29 @@ public class SellerApiController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Map<String, Object>> updateProduct(@PathVariable Long id, @ModelAttribute ProdUploadRequestDTO dto) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> editProduct(
+            @PathVariable Long id,
+            @ModelAttribute ProdUploadRequestDTO dto) {
         try {
-            log.info("Update Request - ID: {}, DTO: {}", id, dto);
             sellerService.updateProduct(id, dto);
-            response.put("success", true);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (IllegalArgumentException e) {
+            log.warn("잘못된 제품 ID 입력 {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
         } catch (Exception e) {
-            log.error("Error updating product with ID: {}", id, e);
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            log.error("상품 수정 중 오류 발생 {}: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "상품 수정 중 서버 오류가 발생했습니다. 다시 시도해 주세요."
+            ));
         }
     }
 
     @DeleteMapping("/detail/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<?> removeProduct(@PathVariable Long id) {
         try {
             sellerService.deleteProductsByIds(Collections.singletonList(id));  // id를 리스트로 감싸서 전달
             Map<String, Object> response = new HashMap<>();

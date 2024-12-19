@@ -16,7 +16,7 @@ public class CongdongDTO {
     private String condition; // 변환된 {?:?} 형태
 
     public static CongdongDTO fromEntity(Congdong congdong) {
-        Map<Integer, Integer> conditionMap = parseCondition(congdong.getConditon());
+        Map<Integer, Integer> conditionMap = parseCondition(congdong.getConditions());
         return CongdongDTO.builder()
                 .id(congdong.getId())
                 .productId(congdong.getProduct().getId())
