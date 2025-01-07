@@ -1,11 +1,16 @@
 package com.example.spring.bzsellerservice.controller;
 
 import com.example.spring.bzsellerservice.dto.congdong.CongdongDTO;
+import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadResponseDTO;
 import com.example.spring.bzsellerservice.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,11 +28,27 @@ import java.util.Objects;
 
 @Slf4j
 @RestController
-@RequestMapping("/seller/product")
+@RequestMapping("/product")
 @RequiredArgsConstructor
 public class ProductApiController {
 
     private final ProductService productService;
+
+    @GetMapping("/list")
+    Page<ProdReadResponseDTO> getProductList(
+            @RequestParam("page") int page,
+            @RequestParam("size") int size,
+            @RequestHeader("Accept") String acceptHeader){
+        System.out.println("client 도착");
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+
+        Page<ProdReadResponseDTO> productPage = productService.findAll(pageable);
+
+        log.info("Response: {}", productPage);
+
+        return productPage;
+    }
 
     @PostMapping
     public ResponseEntity<ProdUploadResponseDTO> addProduct(@ModelAttribute ProdUploadRequestDTO dto) {
