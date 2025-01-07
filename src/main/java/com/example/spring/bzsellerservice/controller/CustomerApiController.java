@@ -4,14 +4,13 @@ import com.example.spring.bzsellerservice.dto.UrlResponseDTO;
 import com.example.spring.bzsellerservice.dto.customer.SignUpRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.service.CustomerService;
+import com.example.spring.bzsellerservice.service.ProductttService;
 import com.example.spring.bzsellerservice.service.ProductService;
-import com.example.spring.bzsellerservice.service.SellerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,8 +23,8 @@ import java.util.Map;
 public class CustomerApiController {
 
     private final CustomerService customerService;
+    private final ProductttService productttService;
     private final ProductService productService;
-    private final SellerService sellerService;
 
     @PostMapping("/join")
     public ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO) {
@@ -43,7 +42,7 @@ public class CustomerApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "15") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
-        Page<ProdReadResponseDTO> productPage = productService.findAll(pageable);
+        Page<ProdReadResponseDTO> productPage = productttService.findAll(pageable);
 
         Map<String, Object> response = new HashMap<>();
         response.put("products", productPage.getContent());
@@ -64,9 +63,9 @@ public class CustomerApiController {
         Pageable pageable = PageRequest.of(page, size);
 
         if (name != null && !name.isEmpty()) {
-            return productService.searchProductsByName(name, pageable);
+            return productttService.searchProductsByName(name, pageable);
         } else {
-            return sellerService.findAll(pageable);
+            return productService.findAll(pageable);
         }
     }
 

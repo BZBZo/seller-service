@@ -21,12 +21,12 @@ public class CustomerService {
     private final ProductRepository productRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final ObjectMapper objectMapper;
-    private final ProductService productService;
+    private final ProductttService productttService;
 
     public void save(SignUpRequestDTO dto) {
         Customer customer = dto.toCustomer(bCryptPasswordEncoder);
         // role이 ROLE_SELLER인지 ROLE_CUSTOMER인지 설정
-        customer.setRole("ROLE_SELLER");  // 권한 설정
+        customer.setRole("ROLE_CUSTOMER");  // 권한 설정
         customerRepository.save(customer);
     }
 
