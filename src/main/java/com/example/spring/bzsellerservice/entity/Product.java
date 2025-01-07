@@ -27,23 +27,6 @@ public class Product {
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isCong;
 
-    private Double productPrice;
-    private String productCategory;
-    private String productSeason;
-    private String productTemperature;
-
-    // Getter 메서드들
-    public Double getProductPrice() {
-        return productPrice;
-    }
-
-    public String getProductCategory() {
-        return productCategory;
-    }
-
-
-
-
     // 리뷰 여부를 관리하는 Map
     @Transient // 이 필드는 데이터베이스에 저장되지 않음
     private Map<Long, Boolean> reviewedPurchases = new HashMap<>();
