@@ -1,9 +1,11 @@
 package com.example.spring.bzsellerservice.controller;
 
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
+import com.example.spring.bzsellerservice.entity.Congdong;
 import com.example.spring.bzsellerservice.entity.Customer;
+import com.example.spring.bzsellerservice.service.CongdongService;
 import com.example.spring.bzsellerservice.service.CustomerService;
-import com.example.spring.bzsellerservice.service.ProductService;
+import com.example.spring.bzsellerservice.service.ProductttService;
 import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,12 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @AllArgsConstructor
@@ -25,7 +28,8 @@ import java.util.List;
 public class CustomerViewController {
 
     private final CustomerService customerService;
-    private final ProductService productService;
+    private final ProductttService productttService;
+    private final CongdongService congdongService;
 
     @GetMapping("/join")
     public String signUp() {
@@ -41,7 +45,7 @@ public class CustomerViewController {
     @GetMapping("/product/detail/{id}")
     public String detail(HttpSession session, @PathVariable Long id, Model model) {
         // 상품 정보 찾기
-        ProdReadResponseDTO product = productService.findById(id);
+        ProdReadResponseDTO product = productttService.findById(id);
 
         // mainPicture 경로에서 역슬래시(`\`)를 슬래시(`/`)로 변경
         if (product.getMainPicturePath() != null) {
@@ -62,7 +66,7 @@ public class CustomerViewController {
         int pageSize = 15;
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").ascending());
 
-        Page<ProdReadResponseDTO> productPage = productService.findAll(pageable);
+        Page<ProdReadResponseDTO> productPage = productttService.findAll(pageable);
         List<ProdReadResponseDTO> products = productPage.getContent();
 
         int totalPages = productPage.getTotalPages();
@@ -83,6 +87,31 @@ public class CustomerViewController {
     @GetMapping("/search")
     public String search() {
         return "search";
+    }
+
+    // 상품 ID에 맞는 조건들을 반환
+    @GetMapping("/product/conditions/{productId}")
+    @ResponseBody
+    public Map<String, Object> getConditionsByProductId(@PathVariable Long productId) {
+        List<Congdong> conditions = congdongService.findConditionsByProductId(productId);
+
+        // 문자열 조건을 JSON 객체로 변환
+        List<Map<String, Integer>> formattedConditions = conditions.stream()
+                .map(condition -> Arrays.stream(condition.getConditions().split(","))
+                        .map(c -> {
+                            String[] parts = c.replace("{", "").replace("}", "").split(":");
+                            return Map.of("people", Integer.parseInt(parts[0]), "discount", Integer.parseInt(parts[1]));
+                        })
+                        .collect(Collectors.toList()))
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "조건 조회 성공");
+        response.put("data", formattedConditions);
+
+        return response;
     }
 
 }

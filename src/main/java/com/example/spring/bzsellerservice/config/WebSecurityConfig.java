@@ -28,16 +28,15 @@ public class WebSecurityConfig {
                                 .requestMatchers(
                                         "/user/login", "/user/join", "/join", "/home/**",
                                         "/user/product/list", "/user/product/detail/**", // <-- 여기 수정
-                                        "/user/product/list", "/user/product/api/list",
-                                        "/user/review_list"
+                                        "/user/product/api/list", "/user/review_list",
+                                        "seller/product/list", "seller/product/upload",
+                                        "seller/product/detail/", "seller/product/uploadImage",
+                                        "seller/product"
                                 ).permitAll()
                                 .requestMatchers(
                                         "/user/cart/add", "/user/buy"
                                 ).authenticated()
-                                .requestMatchers(
-                                        "/seller/product/list", "/seller/product/upload", "/seller/**"
-                                ).hasRole("SELLER")
-                                .anyRequest().authenticated()
+                                .requestMatchers("/seller/**").hasRole("SELLER").anyRequest().authenticated()
                 )
                 .formLogin(
                         form -> form

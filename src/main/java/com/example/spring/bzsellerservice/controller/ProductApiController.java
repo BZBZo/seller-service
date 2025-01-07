@@ -3,7 +3,7 @@ package com.example.spring.bzsellerservice.controller;
 import com.example.spring.bzsellerservice.dto.congdong.CongdongDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadResponseDTO;
-import com.example.spring.bzsellerservice.service.SellerService;
+import com.example.spring.bzsellerservice.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,9 +25,9 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/seller/product")
 @RequiredArgsConstructor
-public class SellerApiController {
+public class ProductApiController {
 
-    private final SellerService sellerService;
+    private final ProductService productService;
 
     @PostMapping
     public ResponseEntity<ProdUploadResponseDTO> addProduct(@ModelAttribute ProdUploadRequestDTO dto) {
@@ -50,7 +50,7 @@ public class SellerApiController {
 
             // 설명 텍스트에서 절대 경로를 상대 경로로 변경
             String description = dto.getDescription();
-            String formatDescription = description.replace("http://localhost:8085/uploads/", "/uploads/");
+            String formatDescription = description.replace("http://localhost:8088/uploads/", "/uploads/");
             dto.setDescription(formatDescription);
 
             System.out.println("메인 이미지: " + (mainPicture != null ? mainPicture.getOriginalFilename() : "없음"));
@@ -91,7 +91,7 @@ public class SellerApiController {
             }
 
             // Product 저장
-            Long productId = sellerService.save(dto);
+            Long productId = productService.save(dto);
 
             // Congdong 저장 처리
             if (dto.isCong() && dto.getCondition() != null) {
@@ -99,7 +99,7 @@ public class SellerApiController {
                         .productId(productId)
                         .condition(dto.getCondition())
                         .build();
-                sellerService.saveCongdong(congdongDTO);
+                productService.saveCongdong(congdongDTO);
                 System.out.println("Congdong 저장 완료: " + congdongDTO);
             }
 
@@ -143,7 +143,7 @@ public class SellerApiController {
             @PathVariable Long id,
             @ModelAttribute ProdUploadRequestDTO dto) {
         try {
-            sellerService.updateProduct(id, dto);
+            productService.updateProduct(id, dto);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             log.warn("잘못된 제품 ID 입력 {}: {}", id, e.getMessage());
@@ -163,7 +163,7 @@ public class SellerApiController {
     @DeleteMapping("/detail/{id}")
     public ResponseEntity<?> removeProduct(@PathVariable Long id) {
         try {
-            sellerService.deleteProductsByIds(Collections.singletonList(id));  // id를 리스트로 감싸서 전달
+            productService.deleteProductsByIds(Collections.singletonList(id));  // id를 리스트로 감싸서 전달
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "상품이 성공적으로 삭제되었습니다.");
