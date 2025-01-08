@@ -4,7 +4,7 @@ import com.example.spring.bzsellerservice.dto.congdong.CongdongDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadResponseDTO;
-import com.example.spring.bzsellerservice.service.ProductService;
+import com.example.spring.bzsellerservice.service.SellerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,22 +32,34 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class ProductApiController {
 
-    private final ProductService productService;
+    private final SellerService productService;
 
+    // 판매자가 판매하는 상품들
     @GetMapping("/list")
     Page<ProdReadResponseDTO> getProductList(
             @RequestParam("page") int page,
             @RequestParam("size") int size,
             @RequestHeader("Accept") String acceptHeader){
         System.out.println("client 도착");
-
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
-
         Page<ProdReadResponseDTO> productPage = productService.findAll(pageable);
-
         log.info("Response: {}", productPage);
-
         return productPage;
+    }
+
+    // 상품 상세 정보 조회
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<ProdReadResponseDTO> getProductDetail(@PathVariable Long id) {
+        // 상품 데이터 조회
+        ProdReadResponseDTO product = productService.getProductDetails(id);
+
+        // 상품이 없을 경우 404 Not Found 반환
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 상품 정보를 JSON 형식으로 반환
+        return ResponseEntity.ok(product);
     }
 
     @PostMapping
@@ -103,7 +115,7 @@ public class ProductApiController {
                     log.error("메인 이미지 저장 중 오류 발생", e);
                     return ResponseEntity.status(500).body(
                             ProdUploadResponseDTO.builder()
-                                    .url("/seller/product/upload")
+                                    .url("/product/upload")
                                     .build()
                     );
                 }
@@ -126,7 +138,7 @@ public class ProductApiController {
 
             return ResponseEntity.ok(
                     ProdUploadResponseDTO.builder()
-                            .url("/seller/product/list")
+                            .url("/product/list")
                             .mainPicturePath(mainPicturePath)
                             .build()
             );
@@ -135,7 +147,7 @@ public class ProductApiController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     ProdUploadResponseDTO.builder()
-                            .url("/seller/product/upload")
+                            .url("/product/upload")
                             .build()
             );
         }
@@ -159,7 +171,7 @@ public class ProductApiController {
         }
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> editProduct(
             @PathVariable Long id,
             @ModelAttribute ProdUploadRequestDTO dto) {
