@@ -32,7 +32,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class ProductApiController {
 
-    private final SellerService productService;
+    private final SellerService sellerService;
 
     // 판매자가 판매하는 상품들
     @GetMapping("/list")
@@ -42,7 +42,7 @@ public class ProductApiController {
             @RequestHeader("Accept") String acceptHeader){
         System.out.println("client 도착");
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
-        Page<ProdReadResponseDTO> productPage = productService.findAll(pageable);
+        Page<ProdReadResponseDTO> productPage = sellerService.findAll(pageable);
         log.info("Response: {}", productPage);
         return productPage;
     }
@@ -51,7 +51,7 @@ public class ProductApiController {
     @GetMapping("/detail/{id}")
     public ResponseEntity<ProdReadResponseDTO> getProductDetail(@PathVariable Long id) {
         // 상품 데이터 조회
-        ProdReadResponseDTO product = productService.getProductDetails(id);
+        ProdReadResponseDTO product = sellerService.getProductDetails(id);
 
         // 상품이 없을 경우 404 Not Found 반환
         if (product == null) {
@@ -124,7 +124,7 @@ public class ProductApiController {
             }
 
             // Product 저장
-            Long productId = productService.save(dto);
+            Long productId = sellerService.save(dto);
 
             // Congdong 저장 처리
             if (dto.isCong() && dto.getCondition() != null) {
@@ -132,7 +132,7 @@ public class ProductApiController {
                         .productId(productId)
                         .condition(dto.getCondition())
                         .build();
-                productService.saveCongdong(congdongDTO);
+                sellerService.saveCongdong(congdongDTO);
                 System.out.println("Congdong 저장 완료: " + congdongDTO);
             }
 
@@ -176,7 +176,7 @@ public class ProductApiController {
             @PathVariable Long id,
             @ModelAttribute ProdUploadRequestDTO dto) {
         try {
-            productService.updateProduct(id, dto);
+            sellerService.updateProduct(id, dto);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             log.warn("잘못된 제품 ID 입력 {}: {}", id, e.getMessage());
@@ -196,7 +196,7 @@ public class ProductApiController {
     @DeleteMapping("/detail/{id}")
     public ResponseEntity<?> removeProduct(@PathVariable Long id) {
         try {
-            productService.deleteProductsByIds(Collections.singletonList(id));  // id를 리스트로 감싸서 전달
+            sellerService.deleteProductsByIds(Collections.singletonList(id));  // id를 리스트로 감싸서 전달
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "상품이 성공적으로 삭제되었습니다.");
