@@ -39,21 +39,31 @@ public class SellerService {
                 .map(Product::toProdReadResponseDTO);
     }
 
-    public Long save(ProdUploadRequestDTO dto) throws IOException {
+    public Long save(ProdUploadRequestDTO dto, Long sellerId) throws IOException {
+        log.info("Received DTO: {}", dto);
 
         // 설명 필드 필터링 추가
         String description = filterDescription(dto.getDescription());
+        log.info("Filtered description: {}", description);
 
+        // 메인 이미지 저장
         String mainPicturePath = saveFile(dto.getMainPicture());
+        log.info("Saved main picture path: {}", mainPicturePath);
 
+        // Product 엔티티 생성 및 sellerId 설정
         Product product = dto.toProduct();
+        product.setSellerId(sellerId); // DTO에서 받은 sellerId 설정
         product.setMainPicturePath(mainPicturePath);
         product.setDescription(description);
         product.setIsCong(dto.isCong());
+        log.info("Product entity before save: {}", product);
+
+        // DB에 저장
         Product savedProduct = productRepository.save(product);
-
         log.info("Product saved with ID: {}", savedProduct.getId());
+        log.info("Saving Product: {}", product);
 
+        // 공구 조건 처리
         handleCongdong(savedProduct, false, dto.isCong(), dto.getCondition());
 
         return savedProduct.getId();
