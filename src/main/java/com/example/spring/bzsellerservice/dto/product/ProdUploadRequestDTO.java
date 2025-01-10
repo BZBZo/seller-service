@@ -17,12 +17,14 @@ public class ProdUploadRequestDTO {
     private String mainPicturePath; // 메인 이미지 경로 추가
     private boolean isCong;
     private String condition; // 모집인원과 할인율 정보를 JSON 형식으로 저장
+    private Long sellerId;
 
     public Product toProduct() {
         System.out.println("엔티티의 isCong 값: " + isCong);
         return Product.builder()
                 .name(name)
                 .price(price)
+                .sellerId(sellerId)
                 .quantity(quantity)
                 .category(category)
                 .description(description)

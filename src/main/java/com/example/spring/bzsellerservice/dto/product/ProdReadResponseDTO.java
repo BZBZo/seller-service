@@ -16,4 +16,5 @@ public class ProdReadResponseDTO {
     private String category;
     private boolean isCong;
     private String condition; // condition 필드 추가
+    private Long sellerId;
 }
