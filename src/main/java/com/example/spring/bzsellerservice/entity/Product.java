@@ -19,6 +19,7 @@ public class Product {
 
     private String name;
     private Integer price;
+    private Long sellerId;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
     private String quantity;
@@ -32,10 +33,11 @@ public class Product {
     private Map<Long, Boolean> reviewedPurchases = new HashMap<>();
 
     @Builder
-    public Product(Long id, String name, Integer price, String mainPicturePath, String description, String quantity, String category, boolean isCong) {
+    public Product(Long id, String name, Integer price, Long sellerId, String mainPicturePath, String description, String quantity, String category, boolean isCong) {
         this.id = id;
         this.name = name;
         this.price = price;
+        this.sellerId = sellerId;
         this.mainPicturePath = mainPicturePath;
         this.description = description;
         this.quantity = quantity;

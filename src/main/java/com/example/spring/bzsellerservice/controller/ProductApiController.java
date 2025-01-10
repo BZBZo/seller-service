@@ -63,13 +63,20 @@ public class ProductApiController {
     }
 
     @PostMapping
-    public ResponseEntity<ProdUploadResponseDTO> addProduct(@ModelAttribute ProdUploadRequestDTO dto) {
+    public ResponseEntity<ProdUploadResponseDTO> addProduct(
+            @ModelAttribute ProdUploadRequestDTO dto,
+            @RequestHeader("Authorization") String token // Authorization 헤더에서 토큰 가져오기
+    ) {
         log.info("DTO condition: {}", dto.getCondition()); // 값이 제대로 넘어오는지 확인
+        log.info("Authorization Header: {}", token);
         try {
+            // **DTO에서 sellerId 추출**
+            Long sellerId = dto.getSellerId();
+            log.info("Fetched sellerId from DTO: {}", sellerId);
+
             // 전달된 DTO 값 확인
             log.info("Description received: {}", dto.getDescription());
             log.info("Condition received: {}", dto.getCondition());
-            // 상품 정보 로깅
             System.out.println("상품명 : " + dto.getName() + '\n'
                     + "가격 : " + dto.getPrice() + '\n'
                     + "수량 : " + dto.getQuantity() + '\n'
@@ -124,7 +131,7 @@ public class ProductApiController {
             }
 
             // Product 저장
-            Long productId = sellerService.save(dto);
+            Long productId = sellerService.save(dto, sellerId); // sellerId 전달
 
             // Congdong 저장 처리
             if (dto.isCong() && dto.getCondition() != null) {
