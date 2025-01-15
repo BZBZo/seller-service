@@ -155,13 +155,19 @@ public class SellerService {
     }
 
     public ProdReadResponseDTO getProductDetails(Long id) {
+        log.info("Product ID: {}", id);
+
+        // 상품 데이터를 리포지토리에서 조회
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+
+        log.info("Retrieved Product: {}", product);
 
         // Congdong 데이터 가져오기
         Optional<Congdong> congdong = congdongRepository.findByProductId(id);
         String condition = congdong.map(Congdong::getConditions).orElse("{1:0}"); // 기본값 설정
 
+        // DTO에 상품 데이터 매핑
         return ProdReadResponseDTO.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -171,7 +177,8 @@ public class SellerService {
                 .description(product.getDescription())
                 .mainPicturePath(product.getMainPicturePath())
                 .isCong(product.isCong())
-                .condition(condition) // 기본값 포함
+                .condition(condition)
+                .sellerId(product.getSellerId())
                 .build();
     }
 

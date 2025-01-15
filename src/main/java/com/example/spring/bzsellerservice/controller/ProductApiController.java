@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,18 +48,45 @@ public class ProductApiController {
         return productPage;
     }
 
-    // 상품 상세 정보 조회
-    @GetMapping("/detail/{id}")
-    public ResponseEntity<ProdReadResponseDTO> getProductDetail(@PathVariable Long id) {
-        // 상품 데이터 조회
+    @GetMapping("/upload")
+    public String uploadProduct() {
+        //상품 등록 폼으로 이동
+        return "product_upload";
+    }
+
+    @GetMapping("/edit/{id}")
+    public ResponseEntity<ProdReadResponseDTO> editProduct(@PathVariable Long id) {
+        // 상품의 상세 정보를 조회
+        ProdReadResponseDTO product = sellerService.getProductDetails(id);
+        return ResponseEntity.ok(product); // JSON 형식으로 반환
+    }
+
+//    @GetMapping("/edit/{id}")
+//    public String editProduct(@PathVariable Long id, Model model) {
+//        // 상품의 상세 정보를 조회하여 수정 폼에 표시할 수 있도록 모델에 추가
+//        ProdReadResponseDTO product = sellerService.getProductDetails(id);
+//        model.addAttribute("product", product);
+//        return "product_edit"; // 수정 페이지 HTML 파일 이름
+//    }
+
+    @GetMapping("/detail/po/{id}")
+    public ResponseEntity<ProdReadResponseDTO> getProductDetail(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token
+    ) {
+        // 토큰 확인을 위한 로그
+        System.out.println("Token received in Seller Controller: " + token);
+
+        if (token == null || token.isEmpty()) {
+            throw new IllegalStateException("Authorization token is missing");
+        }
+
         ProdReadResponseDTO product = sellerService.getProductDetails(id);
 
-        // 상품이 없을 경우 404 Not Found 반환
         if (product == null) {
             return ResponseEntity.notFound().build();
         }
 
-        // 상품 정보를 JSON 형식으로 반환
         return ResponseEntity.ok(product);
     }
 
