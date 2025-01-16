@@ -61,13 +61,6 @@ public class ProductApiController {
         return ResponseEntity.ok(product); // JSON 형식으로 반환
     }
 
-//    @GetMapping("/edit/{id}")
-//    public String editProduct(@PathVariable Long id, Model model) {
-//        // 상품의 상세 정보를 조회하여 수정 폼에 표시할 수 있도록 모델에 추가
-//        ProdReadResponseDTO product = sellerService.getProductDetails(id);
-//        model.addAttribute("product", product);
-//        return "product_edit"; // 수정 페이지 HTML 파일 이름
-//    }
 
     @GetMapping("/detail/po/{id}")
     public ResponseEntity<ProdReadResponseDTO> getProductDetail(
