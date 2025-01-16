@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Slf4j
@@ -33,10 +34,44 @@ public class SellerService {
 
     private final ProductRepository productRepository;
     private final CongdongRepository congdongRepository; // Congdong Repository 추가
+    private final ImgServiceImpl imgServiceImpl;
 
     public Page<ProdReadResponseDTO> findAll(Pageable pageable) {
         return productRepository.findAll(pageable)
                 .map(Product::toProdReadResponseDTO);
+    }
+
+    public String processProductUpload(ProdUploadRequestDTO dto) throws IOException {
+        log.info("Processing product upload: {}", dto);
+
+        // 1. 설명 필터링
+        String filteredDescription = filterDescription(dto.getDescription());
+        dto.setDescription(filteredDescription);
+
+        // 2. S3에 이미지 업로드
+        if (dto.getMainPicture() != null && !dto.getMainPicture().isEmpty()) {
+            String mainPicturePath = imgServiceImpl.uploadImg("static/bz-product/" + UUID.randomUUID(), dto.getMainPicture());
+            dto.setMainPicturePath(mainPicturePath);
+            log.info("Image uploaded to S3. Path: {}", mainPicturePath);
+        } else {
+            log.warn("No image provided for product.");
+        }
+
+        // 3. 상품 저장
+        Long sellerId = dto.getSellerId();
+        Long productId = save(dto, sellerId);
+
+        // 4. 공구 저장
+        if (dto.isCong() && dto.getCondition() != null) {
+            saveCongdong(CongdongDTO.builder()
+                    .productId(productId)
+                    .condition(dto.getCondition())
+                    .build()
+            );
+        }
+
+        log.info("Product upload completed successfully");
+        return "/product/list";
     }
 
     public Long save(ProdUploadRequestDTO dto, Long sellerId) throws IOException {
@@ -46,9 +81,9 @@ public class SellerService {
         String description = filterDescription(dto.getDescription());
         log.info("Filtered description: {}", description);
 
-        // 메인 이미지 저장
-        String mainPicturePath = saveFile(dto.getMainPicture());
-        log.info("Saved main picture path: {}", mainPicturePath);
+        // 메인 이미지 저장 S3에서 받은 메인 이미지 경로 사용
+        String mainPicturePath = dto.getMainPicturePath(); // S3 경로 사용
+        log.info("Using S3 Saved main picture path.: {}", mainPicturePath);
 
         // Product 엔티티 생성 및 sellerId 설정
         Product product = dto.toProduct();
