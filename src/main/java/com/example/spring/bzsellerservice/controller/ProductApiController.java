@@ -46,6 +46,30 @@ public class ProductApiController {
         return productPage;
     }
 
+    // 판매자가 판매하는 상품들
+    @GetMapping("/myMarket")
+    Page<ProdReadResponseDTO> loadMyProduct(
+            @RequestParam("page") int page,
+            @RequestParam("size") int size,
+            @RequestHeader("Authorization") String token
+    ){
+        // 토큰 로그 확인
+        System.out.println("Token received in Seller Controller: " + token);
+        System.out.println("client 도착");
+
+        if (token == null || token.isEmpty()) {
+            throw new IllegalStateException("Authorization token is missing");
+        }
+
+        // 페이징 처리
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+
+        // 서비스 호출
+        Page<ProdReadResponseDTO> productPage = sellerService.findAll(pageable);
+
+        return productPage;
+    }
+
     @GetMapping("/edit/{id}")
     public ResponseEntity<ProdReadResponseDTO> editProduct(@PathVariable Long id) {
         // 상품의 상세 정보를 조회
