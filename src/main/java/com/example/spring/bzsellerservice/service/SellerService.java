@@ -71,7 +71,7 @@ public class SellerService {
         }
 
         log.info("Product upload completed successfully");
-        return "/product/list";
+        return "success";
     }
 
     public Long save(ProdUploadRequestDTO dto, Long sellerId) throws IOException {
