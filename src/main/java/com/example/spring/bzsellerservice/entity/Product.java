@@ -68,6 +68,7 @@ public class Product {
                 .quantity(quantity)
                 .category(category)
                 .isCong(isCong)
+                .sellerId(sellerId)
                 .build();
     }
 
