@@ -1,5 +1,6 @@
 package com.example.spring.bzsellerservice.service;
 
+import com.example.spring.bzsellerservice.config.s3.S3Uploader;
 import com.example.spring.bzsellerservice.dto.congdong.CongdongDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
@@ -35,6 +36,7 @@ public class SellerService {
     private final ProductRepository productRepository;
     private final CongdongRepository congdongRepository; // Congdong Repository 추가
     private final ImgServiceImpl imgServiceImpl;
+    private final S3Uploader s3Uploader;
 
     public Page<ProdReadResponseDTO> findAll(Pageable pageable) {
         return productRepository.findAll(pageable)
@@ -146,10 +148,14 @@ public class SellerService {
     }
 
 
-    public void updateProduct(Long id, ProdUploadRequestDTO dto) throws IOException {
+    public void updateProduct(Long id, ProdUploadRequestDTO dto, MultipartFile mainPicture) throws IOException {
         // ID 유효성 검증
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 상품 ID입니다: " + id));
+
+        // 로그 추가: 기존 DTO와 이미지 경로
+        log.info("[updateProduct] DTO: {}", dto);
+        log.info("[updateProduct] Main Picture Path Before Update: {}", existingProduct.getMainPicturePath());
 
         // 설명 필드 필터링
         String filteredDescription = filterDescription(dto.getDescription());
@@ -174,6 +180,33 @@ public class SellerService {
             throw new IllegalArgumentException("설명은 필수 입력 항목입니다.");
         }
 
+        // 이미지 처리
+        if (mainPicture != null && !mainPicture.isEmpty()) {
+            // 기존 이미지 삭제
+            if (existingProduct.getMainPicturePath() != null) {
+                try {
+                    s3Uploader.deleteS3(existingProduct.getMainPicturePath());
+                    log.info("[updateProduct] Deleted existing S3 image at path: {}", existingProduct.getMainPicturePath());
+                } catch (Exception e) {
+                    throw new RuntimeException("기존 이미지를 삭제하는 중 오류 발생", e);
+                }
+            }
+
+            // 새 이미지 업로드
+            String newImagePath = imgServiceImpl.uploadImg("static/bz-product/" + UUID.randomUUID(), mainPicture);
+            log.info("[updateProduct] Uploaded new image path: {}", newImagePath);
+
+            // 방어 코드: 중복 경로 방지
+            if (existingProduct.getMainPicturePath() == null || !existingProduct.getMainPicturePath().contains("https://s3")) {
+                existingProduct.setMainPicturePath(newImagePath);
+            } else {
+                log.warn("[updateProduct] 중복 경로가 감지되었습니다: {}", existingProduct.getMainPicturePath());
+            }
+
+            // 로그 추가: 업데이트 후 경로
+            log.info("[updateProduct] Main Picture Path After Update: {}", existingProduct.getMainPicturePath());
+        }
+
         boolean wasCong = existingProduct.isCong();
         boolean isCong = dto.isCong();
 
@@ -182,6 +215,7 @@ public class SellerService {
 
         // 상품 저장
         productRepository.save(existingProduct);
+        log.info("[updateProduct] Updated product: {}", existingProduct);
 
         // 공구 조건 처리
         handleCongdong(existingProduct, wasCong, isCong, dto.getCondition());
@@ -350,8 +384,28 @@ public class SellerService {
     }
 
     public void deleteProductsByIds(List<Long> productIds) {
-        productRepository.deleteAllById(productIds);
-        log.info("Deleted products with IDs: " + productIds);
-    }
+        for (Long id : productIds) {
+            try {
+                // 상품 ID로 조회
+                Optional<Product> product = productRepository.findById(id);
+                if (product.isPresent()) {
+                    String filePath = product.get().getMainPicturePath(); // 상품 이미지 경로
+                    if (filePath != null && !filePath.isEmpty()) {
+                        s3Uploader.deleteS3(filePath); // S3에서 이미지 삭제
+                        log.info("S3 파일 삭제 성공: " + filePath);
+                    } else {
+                        log.warn("이미지 경로가 비어있습니다. ID: " + id);
+                    }
+                } else {
+                    log.warn("상품을 찾을 수 없습니다. ID: " + id);
+                }
 
+                // 상품 삭제
+                productRepository.deleteById(id);
+                log.info("상품 삭제 성공: ID = " + id);
+            } catch (Exception e) {
+                log.error("상품 삭제 실패: ID = " + id, e);
+            }
+        }
+    }
 }
