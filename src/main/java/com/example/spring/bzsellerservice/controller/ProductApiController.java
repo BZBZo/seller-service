@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -145,12 +146,18 @@ public class ProductApiController {
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> editProduct(
             @PathVariable Long id,
-            @ModelAttribute ProdUploadRequestDTO dto) {
+            @RequestParam("mainPicture") MultipartFile mainPicture,
+            @RequestPart("productData") ProdUploadRequestDTO dto) {
+        System.out.println("id : "+id+"  pc " + mainPicture);
         try {
-            sellerService.updateProduct(id, dto);
+            // 로그 추가
+            log.info("DTO Received in Controller: {}", dto);
+            log.info("MultipartFile Name: {}, Size: {}", mainPicture.getOriginalFilename(), mainPicture.getSize());
+
+            sellerService.updateProduct(id, dto, mainPicture);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             log.warn("잘못된 제품 ID 입력 {}: {}", id, e.getMessage());
