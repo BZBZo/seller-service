@@ -71,17 +71,13 @@ public class S3Uploader {
      * 영어 파일만 삭제 가능 -> 한글 이름 파일은 안됨
      */
     public void deleteS3(String filePath) throws Exception {
-        try{
-            String key = filePath.substring(56); // 폴더/파일.확장자
-
-            try {
-                amazonS3Client.deleteObject(bucket, key);
-            } catch (AmazonServiceException e) {
-                log.info(e.getErrorMessage());
-            }
-
-        } catch (Exception exception) {
-            log.info(exception.getMessage());
+        try {
+            // S3 URL에서 버킷 이름과 경로 제거
+            String key = filePath.replaceFirst("https://s3.ap-northeast-2.amazonaws.com/" + bucket + "/", "");
+            amazonS3Client.deleteObject(bucket, key);
+            log.info("S3 파일 삭제 성공: " + filePath);
+        } catch (AmazonServiceException e) {
+            log.error("S3 파일 삭제 실패: " + filePath, e);
         }
         log.info("[S3Uploader] : S3에 있는 파일 삭제");
     }
