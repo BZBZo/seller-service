@@ -78,6 +78,21 @@ public class ProductApiController {
         return ResponseEntity.ok(product); // JSON 형식으로 반환
     }
 
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<ProdReadResponseDTO> getProductDetail(@PathVariable Long id) {
+        // 로그 추가
+        System.out.println("Seller Controller 호출: 상품 ID = " + id);
+
+        // 서비스 계층에서 상품 정보 가져오기
+        ProdReadResponseDTO product = sellerService.getProductDetails(id);
+
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(product);
+    }
+
 
     @GetMapping("/detail/po/{id}")
     public ResponseEntity<ProdReadResponseDTO> getProductDetail(
