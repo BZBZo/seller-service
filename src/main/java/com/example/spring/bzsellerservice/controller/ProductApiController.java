@@ -3,6 +3,7 @@ package com.example.spring.bzsellerservice.controller;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadResponseDTO;
+import com.example.spring.bzsellerservice.service.CongdongService;
 import com.example.spring.bzsellerservice.service.SellerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -33,6 +31,7 @@ import java.util.Objects;
 public class ProductApiController {
 
     private final SellerService sellerService;
+    private final CongdongService congdongService;
 
     // 판매자가 판매하는 상품들
     @GetMapping("/list")
@@ -69,6 +68,19 @@ public class ProductApiController {
         Page<ProdReadResponseDTO> productPage = sellerService.findAll(pageable);
 
         return productPage;
+    }
+
+    @GetMapping("/congdong")
+    public List<ProdReadResponseDTO> getCongDongProducts() {
+        log.info("[Seller Service] 공구 가능한 상품 요청 수신");
+        log.info("Fetching CongDong products..."); // 로그 추가
+
+        List<ProdReadResponseDTO> products = congdongService.getAllCongDongProducts();
+
+        log.info("[Seller Service] 공구 가능한 상품 데이터 반환. 상품 수: {}", products.size());
+        log.info("[Seller Service] 상품 데이터: {}", products);
+
+        return products;
     }
 
     @GetMapping("/edit/{id}")
