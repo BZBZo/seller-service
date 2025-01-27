@@ -1,5 +1,6 @@
 package com.example.spring.bzsellerservice.controller;
 
+import com.example.spring.bzsellerservice.dto.product.CartProductResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadResponseDTO;
@@ -173,18 +174,12 @@ public class ProductApiController {
         }
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> editProduct(
             @PathVariable Long id,
-            @RequestParam("mainPicture") MultipartFile mainPicture,
-            @RequestPart("productData") ProdUploadRequestDTO dto) {
-        System.out.println("id : "+id+"  pc " + mainPicture);
+            @ModelAttribute ProdUploadRequestDTO dto) {
         try {
-            // 로그 추가
-            log.info("DTO Received in Controller: {}", dto);
-            log.info("MultipartFile Name: {}, Size: {}", mainPicture.getOriginalFilename(), mainPicture.getSize());
-
-            sellerService.updateProduct(id, dto, mainPicture);
+            sellerService.updateProduct(id, dto);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             log.warn("잘못된 제품 ID 입력 {}: {}", id, e.getMessage());
@@ -216,5 +211,32 @@ public class ProductApiController {
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(response);
         }
     }
+
+    @PostMapping("/cart/list")
+    public ResponseEntity<?> getProductsByIds(@RequestBody List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Product IDs cannot be empty"
+            ));
+        }
+        try {
+            List<CartProductResponseDTO> products = sellerService.getProductsByIds(productIds);
+            return ResponseEntity.ok(products);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid product IDs: {}", productIds, e);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("Error fetching products by IDs: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "An unexpected error occurred. Please try again."
+            ));
+        }
+    }
+
 
 }
