@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
-public class CondDongIng {
+public class CongDongIng {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,7 +37,7 @@ public class CondDongIng {
     private LocalDateTime startAt = LocalDateTime.now();
 
     @Builder
-    public CondDongIng(Long productId, String condition, String congs) {
+    public CongDongIng(Long productId, String condition, String congs) {
         this.productId = productId;
         this.condition = condition;
         this.congs = congs;

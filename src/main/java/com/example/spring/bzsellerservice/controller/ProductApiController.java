@@ -1,9 +1,11 @@
 package com.example.spring.bzsellerservice.controller;
 
+import com.example.spring.bzsellerservice.dto.congdong.CongDongIngDTO;
 import com.example.spring.bzsellerservice.dto.product.CartProductResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadResponseDTO;
+import com.example.spring.bzsellerservice.entity.CongDongIng;
 import com.example.spring.bzsellerservice.service.CongdongService;
 import com.example.spring.bzsellerservice.service.SellerService;
 import lombok.RequiredArgsConstructor;
@@ -84,6 +86,25 @@ public class ProductApiController {
         return products;
     }
 
+    @PostMapping("/congdong")
+    public ResponseEntity<CongDongIngDTO> startCongdong(
+            @RequestBody Map<String, Object> requestBody // JSON 데이터 받기
+    ) {
+
+        Long productId = Long.valueOf(requestBody.get("productId").toString());
+        String condition = requestBody.get("condition").toString();
+        List<Long> congs = (List<Long>) requestBody.get("congs");
+
+        log.info("Received JSON for starting CongDong: productId={}, condition={}, congs={}",
+                productId, condition, congs);
+
+        // 서비스 호출
+        CongDongIngDTO newCongdong = congdongService.startCongdong(productId, condition, congs);
+
+        // 결과 반환
+        return ResponseEntity.ok(newCongdong);
+    }
+
     @GetMapping("/edit/{id}")
     public ResponseEntity<ProdReadResponseDTO> editProduct(@PathVariable Long id) {
         // 상품의 상세 정보를 조회
@@ -105,7 +126,6 @@ public class ProductApiController {
 
         return ResponseEntity.ok(product);
     }
-
 
     @GetMapping("/detail/po/{id}")
     public ResponseEntity<ProdReadResponseDTO> getProductDetail(
