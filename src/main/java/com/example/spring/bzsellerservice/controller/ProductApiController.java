@@ -85,12 +85,12 @@ public class ProductApiController {
         return products;
     }
 
-//    @GetMapping("/congdonging")
-//    public List<CongDongIngDTO> getCongDongActiveProducts() {
-//        List<CongDongIngDTO> activeProducts = congdongService.getAllCongDongingProducts();
-//
-//        return activeProducts;
-//    }
+    @GetMapping("/congdonging")
+    public List<CongDongIngDTO> getCongDongActiveProducts() {
+        List<CongDongIngDTO> activeProducts = congdongService.getAllCongDongingProducts();
+
+        return activeProducts;
+    }
 
     @PostMapping("/congdong")
     public ResponseEntity<CongDongIngDTO> startCongdong(

@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,6 +31,7 @@ public class CongdongService {
     private final CongdongRepository congdongRepository;
     private final CongdongIngRepository congdongIngRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ProductRepository productRepository;
 
     public CongDongIngDTO startCongdong(Long productId, String condition, List<Long> congs) {
         log.info("Starting new CongDong for product ID: {} with condition: {}, congs={}", productId, condition, congs);
@@ -130,4 +133,46 @@ public class CongdongService {
         log.info("All CongDong products retrieved: {}", responseDTOs); // 로그 추가
         return responseDTOs;
     }
+
+    public List<CongDongIngDTO> getAllCongDongingProducts() {
+        log.info("Fetching all active CongDonging products...");
+
+        List<CongDongIng> congdongings = congdongIngRepository.findAll();
+        log.info("Active CongDongIng records retrieved: {}", congdongings);
+
+        List<CongDongIngDTO> responseDTOs = congdongings.stream()
+                .map(congdongIng -> {
+                    // productId를 통해 상품 정보 조회
+                    Optional<Product> optionalProduct = productRepository.findById(congdongIng.getProductId());
+
+                    if (optionalProduct.isEmpty()) {
+                        log.warn("Product not found for productId: {}", congdongIng.getProductId());
+                        return null; // 상품이 없으면 해당 공동구매는 건너뜀
+                    }
+
+                    Product product = optionalProduct.get();
+
+                    // DTO 변환 (상품 정보 추가 ✅)
+                    CongDongIngDTO dto = CongDongIngDTO.builder()
+                            .id(congdongIng.getId())
+                            .productId(congdongIng.getProductId())
+                            .condition(congdongIng.getCondition()) // JSON 형태 그대로 전달
+                            .congs(congdongIng.getCongs()) // JSON 형태 그대로 전달
+                            .startAt(congdongIng.getStartAt()) // 시작 시간 그대로 전달
+                            .name(product.getName()) // ✅ 상품명 추가
+                            .mainPicturePath(product.getMainPicturePath()) // ✅ 상품 이미지 추가
+                            .price(product.getPrice()) // ✅ 상품 가격 추가
+                            .build();
+
+                    log.info("Mapped CongDongIng DTO: {}", dto);
+                    return dto;
+                })
+                .filter(Objects::nonNull) // null 값 제외
+                .collect(Collectors.toList());
+
+        log.info("All active CongDonging products retrieved: {}", responseDTOs);
+        return responseDTOs;
+    }
+
+
 }
