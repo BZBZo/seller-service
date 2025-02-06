@@ -86,6 +86,13 @@ public class ProductApiController {
         return products;
     }
 
+    @GetMapping("/congdonging")
+    public List<CongDongIngDTO> getCongDongActiveProducts() {
+        List<CongDongIngDTO> activeProducts = congdongService.getAllCongDongingProducts();
+
+        return activeProducts;
+    }
+
     @PostMapping("/congdong")
     public ResponseEntity<CongDongIngDTO> startCongdong(
             @RequestBody Map<String, Object> requestBody // JSON 데이터 받기
