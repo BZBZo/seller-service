@@ -15,7 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -86,12 +85,12 @@ public class ProductApiController {
         return products;
     }
 
-    @GetMapping("/congdonging")
-    public List<CongDongIngDTO> getCongDongActiveProducts() {
-        List<CongDongIngDTO> activeProducts = congdongService.getAllCongDongingProducts();
-
-        return activeProducts;
-    }
+//    @GetMapping("/congdonging")
+//    public List<CongDongIngDTO> getCongDongActiveProducts() {
+//        List<CongDongIngDTO> activeProducts = congdongService.getAllCongDongingProducts();
+//
+//        return activeProducts;
+//    }
 
     @PostMapping("/congdong")
     public ResponseEntity<CongDongIngDTO> startCongdong(
@@ -110,6 +109,47 @@ public class ProductApiController {
 
         // 결과 반환
         return ResponseEntity.ok(newCongdong);
+    }
+
+    // ✅ 공동구매 참여 (PUT)
+    @PutMapping("/congdong")
+    public ResponseEntity<CongDongIngDTO> joinCongdong(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, Object> requestBody
+    ) {
+        log.info("🔵 공동구매 참여 요청 수신 (Seller Controller) - Token: {}", token);
+        log.info("📌 요청 바디: {}", requestBody);
+
+        Long productId = Long.valueOf(requestBody.get("productId").toString());
+        String condition = requestBody.get("condition").toString();
+        String congsJson = requestBody.get("congs").toString(); // JSON String 그대로 받기
+
+        // 🔥 따옴표(") 제거 후 로깅
+        String cleanedCongsJson = congsJson.replaceAll("\"", "");
+        log.info("🔍 수신된 congs(JSON, 정리됨): {}", cleanedCongsJson);
+
+        log.info("🔎 추출된 productId: {}, condition: {}", productId, condition);
+        log.info("🔍 수신된 congs(JSON): {}", congsJson);
+
+        return congdongService.joinCongdong(token, productId, condition, congsJson);
+    }
+
+
+    // **상품 ID로 공동구매 진행 중인 정보 전체 반환하는 API**
+    @GetMapping("/{productId}/congdongIng")
+    public ResponseEntity<List<CongDongIng>> getCongdongIngByProductId(@PathVariable Long productId) {
+        log.info("공동구매 진행 정보 요청 - productId: {}", productId);
+
+        // 서비스에서 congdongIng 목록 조회
+        List<CongDongIng> congdongIngList = congdongService.getCongdongIngByProductId(productId);
+
+        if (congdongIngList == null || congdongIngList.isEmpty()) {
+            log.warn("해당 상품의 공동구매 정보 없음 - productId: {}", productId);
+            return ResponseEntity.ok(Collections.emptyList()); // 빈 리스트 반환
+        }
+
+        log.info("반환된 공동구매 목록: {}", congdongIngList);
+        return ResponseEntity.ok(congdongIngList);
     }
 
     @GetMapping("/edit/{id}")

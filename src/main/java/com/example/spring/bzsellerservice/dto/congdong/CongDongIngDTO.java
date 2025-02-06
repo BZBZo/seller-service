@@ -1,12 +1,16 @@
 package com.example.spring.bzsellerservice.dto.congdong;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class CongDongIngDTO {
     private Long id;             // 공동구매 ID
     private Long productId;      // 상품 ID
