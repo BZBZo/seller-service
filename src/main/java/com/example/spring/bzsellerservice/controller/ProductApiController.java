@@ -35,6 +35,11 @@ public class ProductApiController {
     private final SellerService sellerService;
     private final CongdongService congdongService;
 
+    @GetMapping("/list/search")
+    List<ProdReadResponseDTO> getAllProducts(){
+        return sellerService.getAllProduct();
+    }
+
     // 판매자가 판매하는 상품들
     @GetMapping("/list")
     Page<ProdReadResponseDTO> getProductList(

@@ -390,4 +390,18 @@ public class SellerService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    public List<ProdReadResponseDTO> getAllProduct() {
+        return productRepository.findAll().stream()
+                .map(product -> ProdReadResponseDTO.builder()
+                        .id(product.getId())
+                        .name(product.getName())
+                        .price(product.getPrice())
+                        .mainPicturePath(product.getMainPicturePath())
+                        .description(product.getDescription())
+                        .sellerId(product.getSellerId())
+                        .isCong(product.isCong())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
