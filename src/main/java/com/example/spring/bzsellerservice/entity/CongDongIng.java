@@ -22,6 +22,7 @@ public class CongDongIng {
     // productId: 단순하게 숫자 ID만 저장
     @Column(name = "product_id", nullable = false)
     private Long productId;
+
     // condition을 JSON String으로 저장
     @Lob
     @Column(name = "`condition`", columnDefinition = "TEXT")

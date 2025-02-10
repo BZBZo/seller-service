@@ -183,4 +183,16 @@ public class CongdongService {
         log.info("All active CongDonging products retrieved: {}", responseDTOs);
         return responseDTOs;
     }
+
+    public List<CongDongIng> getCongs(Long memberNo) {
+        log.info("📢 [Service] 공동구매 참여 목록 조회 요청 - memberNo: {}", memberNo);
+
+        // JSON_CONTAINS 방식을 사용하여 정확한 검색을 진행
+        List<CongDongIng> result = congdongIngRepository.findByMemberNo(String.valueOf(memberNo));
+
+        log.info("✅ 조회된 공동구매 목록 ({}건): {}", result.size(), result);
+
+        return result;
+    }
+
 }
