@@ -30,8 +30,8 @@ public class CongdongService {
 
     private final CongdongRepository congdongRepository;
     private final CongdongIngRepository congdongIngRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final ProductRepository productRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CongDongIngDTO startCongdong(Long productId, String condition, List<Long> congs) {
         log.info("Starting new CongDong for product ID: {} with condition: {}, congs={}", productId, condition, congs);
@@ -60,30 +60,40 @@ public class CongdongService {
     public ResponseEntity<CongDongIngDTO> joinCongdong(String token, Long productId, String condition, String congsJson) {
         log.info("🔎 공동구매 참여 요청 (Seller Service) → productId={}, condition={}, congs={}", productId, condition, congsJson);
 
-        // 1️⃣ 공동구매 찾기 (없으면 예외 발생)
+        // 공동구매 찾기
         CongDongIng congdong = congdongIngRepository.findByProductIdAndCondition(productId, condition)
                 .orElseThrow(() -> new IllegalArgumentException("❌ 해당 조건의 공동구매가 존재하지 않습니다. productId=" + productId + ", condition=" + condition));
         log.info("✅ 공동구매 정보 찾음: {}", congdong);
 
-        // 2️⃣ Front에서 받은 `congsJson`을 그대로 저장
-        // 2️⃣ 따옴표(") 제거 후 저장 (JSON 형태 유지)
-        String cleanedCongsJson = congsJson.replaceAll("\"", "");  // 🔥 따옴표 제거
-        congdong.setCongs(cleanedCongsJson);
-        congdongIngRepository.save(congdong);
-        log.info("✅ 공동구매 참여자 목록 업데이트 완료: {}", cleanedCongsJson);
+        try {
+            // 1️⃣ JSON 문자열을 List<Long>으로 변환
+            List<Long> congsList = new ObjectMapper().readValue(congsJson, new TypeReference<List<Long>>() {});
 
-        // 3️⃣ DTO 변환 후 반환
-        CongDongIngDTO responseDTO = CongDongIngDTO.builder()
-                .id(congdong.getId())
-                .productId(congdong.getProductId())
-                .condition(congdong.getCondition())
-                .congs(congdong.getCongs())
-                .startAt(congdong.getStartAt())
-                .build();
+            // 2️⃣ List<Long>을 JSON 배열 형태의 String으로 변환 (🔥 불필요한 따옴표 제거)
+            String cleanedCongsJson = new ObjectMapper().writeValueAsString(congsList)
+                    .replace("\"[", "[") // 앞쪽 따옴표 제거
+                    .replace("]\"", "]") // 뒷쪽 따옴표 제거
+                    .replaceAll("\\\\\"", ""); // 이스케이프된 따옴표 제거
 
-        log.info("🚀 최종 반환 DTO: {}", responseDTO);
+            congdong.setCongs(cleanedCongsJson);
+            congdongIngRepository.save(congdong);
+            log.info("✅ 공동구매 참여자 목록 업데이트 완료: {}", cleanedCongsJson);
 
-        return ResponseEntity.ok(responseDTO);
+            // 3️⃣ DTO 변환 후 반환 (🔥 congs를 JSON String 그대로 유지)
+            CongDongIngDTO responseDTO = CongDongIngDTO.builder()
+                    .id(congdong.getId())
+                    .productId(congdong.getProductId())
+                    .condition(congdong.getCondition())
+                    .congs(cleanedCongsJson)  // 🚀 JSON String 그대로 전달
+                    .startAt(congdong.getStartAt())
+                    .build();
+
+            log.info("🚀 최종 반환 DTO: {}", responseDTO);
+            return ResponseEntity.ok(responseDTO);
+        } catch (JsonProcessingException e) {
+            log.error("❌ 공동구매 참여자 목록 JSON 변환 실패", e);
+            throw new RuntimeException("공동구매 참여자 목록 JSON 변환 실패", e);
+        }
     }
 
     // **상품 ID로 congdongIng 테이블의 전체 데이터 가져오기**
@@ -173,6 +183,4 @@ public class CongdongService {
         log.info("All active CongDonging products retrieved: {}", responseDTOs);
         return responseDTOs;
     }
-
-
 }
