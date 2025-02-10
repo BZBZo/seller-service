@@ -310,5 +310,23 @@ public class ProductApiController {
         }
     }
 
+    @GetMapping("/congdong/heestory")
+    public ResponseEntity<List<CongDongIng>> getMyCongs(
+            @RequestHeader("Authorization") String token,  // ✅ 토큰 받기
+            @RequestParam("memberNo") Long memberNo) {  // ✅ memberNo 받기
+
+        log.info("📢 [Seller API 요청] 공동구매 참여 목록 조회 - Authorization 헤더 포함");
+        log.info("📢 [Seller API 요청] token: {}", token);
+        log.info("📢 [Seller API 요청] memberNo: {}", memberNo);
+
+        // ✅ 서비스 호출 시 `memberNo`만 넘김
+        List<CongDongIng> groupPurchases = congdongService.getCongs(memberNo);
+
+        log.info("📢 [Seller API 응답] 조회된 공동구매 개수: {}", groupPurchases.size());
+
+        return ResponseEntity.ok(groupPurchases); // ✅ 엔티티 리스트 그대로 반환
+    }
+
+
 
 }
