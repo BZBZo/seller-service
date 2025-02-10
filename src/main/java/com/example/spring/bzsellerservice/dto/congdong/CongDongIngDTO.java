@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
 public class CongDongIngDTO {
     private Long id;             // 공동구매 ID
     private Long productId;      // 상품 ID
