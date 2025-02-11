@@ -1,14 +1,21 @@
 package com.example.spring.bzsellerservice.service;
 
 import com.example.spring.bzsellerservice.config.s3.S3Uploader;
+import com.example.spring.bzsellerservice.dto.PurchaseDTO;
 import com.example.spring.bzsellerservice.dto.congdong.CongdongDTO;
 import com.example.spring.bzsellerservice.dto.product.CartProductResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdUploadRequestDTO;
 import com.example.spring.bzsellerservice.entity.Congdong;
 import com.example.spring.bzsellerservice.entity.Product;
+import com.example.spring.bzsellerservice.entity.SaleHistory;
 import com.example.spring.bzsellerservice.repository.CongdongRepository;
 import com.example.spring.bzsellerservice.repository.ProductRepository;
+import com.example.spring.bzsellerservice.repository.SaleHistoryRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -39,6 +46,8 @@ public class SellerService {
     private final CongdongRepository congdongRepository; // Congdong Repository 추가
     private final ImgServiceImpl imgServiceImpl;
     private final S3Uploader s3Uploader;
+    private final SaleHistoryRepository saleHistoryRepository;
+    private final ObjectMapper objectMapper; // JSON 변환을 위한 ObjectMapper
 
     public Page<ProdReadResponseDTO> findAll(Pageable pageable) {
         return productRepository.findAll(pageable)
@@ -403,5 +412,43 @@ public class SellerService {
                         .isCong(product.isCong())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void saveSellerHistory(PurchaseDTO dto) {
+        try {
+            // JSON 문자열을 List<ProductInfo> 객체로 변환
+            List<ProductInfo> saleList = objectMapper.readValue(dto.getProductList(), new TypeReference<>() {});
+
+            for (ProductInfo productInfo : saleList) {
+                Long productId = productInfo.getProductId();
+                int quantity = productInfo.getQuantity();
+                Long sellerId = productRepository.findById(productId)
+                        .map(Product::getSellerId)
+                        .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. ID: " + productId));
+
+                // SaleHistory 객체 생성 후 저장
+                SaleHistory saleHistory = SaleHistory.builder()
+                        .sellerId(sellerId)
+                        .productId(productId)
+                        .quantity(quantity)
+                        .memberNo(dto.getMemberNo())
+                        .orderId(dto.getOrderId())
+                        .approvedAt(dto.getApprovedAt())
+                        .build();
+
+                saleHistoryRepository.save(saleHistory);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("판매 내역 저장 중 오류 발생", e);
+        }
+    }
+
+    // JSON 데이터를 매핑할 DTO 클래스 (내부 클래스 혹은 별도 파일)
+    private static class ProductInfo {
+        @Getter
+        private Long productId;
+        @Getter
+        private int quantity; // 필요하면 활용 가능
     }
 }

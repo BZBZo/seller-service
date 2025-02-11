@@ -1,5 +1,6 @@
 package com.example.spring.bzsellerservice.controller;
 
+import com.example.spring.bzsellerservice.dto.PurchaseDTO;
 import com.example.spring.bzsellerservice.dto.congdong.CongDongIngDTO;
 import com.example.spring.bzsellerservice.dto.product.CartProductResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
@@ -327,6 +328,14 @@ public class ProductApiController {
         return ResponseEntity.ok(groupPurchases); // ✅ 엔티티 리스트 그대로 반환
     }
 
+    @PostMapping("/sale/history")
+    void saveSellerHistory(@RequestBody PurchaseDTO dto){
+        log.info("dto: {}", dto.toString());
+
+        sellerService.saveSellerHistory(dto);
+
+
+    }
 
 
 }
