@@ -22,4 +22,7 @@ public class SaleHistory {
     private Long memberNo; //구매자 id
     private String orderId;
     private String approvedAt;
+    private String imgUrl;
+    private String productName;
+    private int price;
 }
