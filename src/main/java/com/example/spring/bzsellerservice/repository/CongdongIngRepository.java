@@ -21,4 +21,5 @@ public interface CongdongIngRepository extends JpaRepository<CongDongIng, Long> 
     @Query(value = "SELECT * FROM congdonging WHERE JSON_CONTAINS(congs, CAST(:memberNo AS JSON), '$')", nativeQuery = true)
     List<CongDongIng> findByMemberNo(@Param("memberNo") String memberNo);
 
+    Optional<CongDongIng> findByProductIdAndConditionAndState(Long productId, String condition, String ing);
 }

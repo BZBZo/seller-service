@@ -1,6 +1,7 @@
 package com.example.spring.bzsellerservice.controller;
 
 import com.example.spring.bzsellerservice.dto.PurchaseDTO;
+import com.example.spring.bzsellerservice.dto.SaleHistoryDTO;
 import com.example.spring.bzsellerservice.dto.congdong.CongDongIngDTO;
 import com.example.spring.bzsellerservice.dto.product.CartProductResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
@@ -138,6 +139,16 @@ public class ProductApiController {
         log.info("🔍 수신된 congs(JSON): {}", congsJson);
 
         return congdongService.joinCongdong(token, productId, condition, congsJson);
+    }
+
+    @PutMapping("/congdong/state")
+    void completeCongdong(@RequestParam Long id, @RequestBody List<Long> congs){
+        congdongService.completeCongdong(id, congs);
+    }
+
+    @PutMapping("/congdong/pay")
+    void updateCongPayState(@RequestParam Long congId, @RequestParam Long memberNo){
+        congdongService.updateCongPayState(congId, memberNo);
     }
 
 
@@ -311,7 +322,7 @@ public class ProductApiController {
         }
     }
 
-    @GetMapping("/congdong/heestory")
+    @GetMapping("/congdong/history")
     public ResponseEntity<List<CongDongIng>> getMyCongs(
             @RequestHeader("Authorization") String token,  // ✅ 토큰 받기
             @RequestParam("memberNo") Long memberNo) {  // ✅ memberNo 받기
@@ -333,9 +344,11 @@ public class ProductApiController {
         log.info("dto: {}", dto.toString());
 
         sellerService.saveSellerHistory(dto);
-
-
     }
 
+    @GetMapping("/sale/history")
+    List<SaleHistoryDTO> getSaleHistoryBySellerID(@RequestParam Long userId){
+        return sellerService.getSaleHistoryBySellerId(userId);
+    }
 
 }

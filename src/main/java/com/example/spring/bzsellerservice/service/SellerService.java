@@ -2,6 +2,7 @@ package com.example.spring.bzsellerservice.service;
 
 import com.example.spring.bzsellerservice.config.s3.S3Uploader;
 import com.example.spring.bzsellerservice.dto.PurchaseDTO;
+import com.example.spring.bzsellerservice.dto.SaleHistoryDTO;
 import com.example.spring.bzsellerservice.dto.congdong.CongdongDTO;
 import com.example.spring.bzsellerservice.dto.product.CartProductResponseDTO;
 import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
@@ -414,15 +415,20 @@ public class SellerService {
                 .collect(Collectors.toList());
     }
 
+    // 일반 구매건 저장
     @Transactional
     public void saveSellerHistory(PurchaseDTO dto) {
         try {
             // JSON 문자열을 List<ProductInfo> 객체로 변환
-            List<ProductInfo> saleList = objectMapper.readValue(dto.getProductList(), new TypeReference<>() {});
+            List<ProductInfo> saleList = objectMapper.readValue(dto.getProductList(), new TypeReference<>() {
+            });
 
             for (ProductInfo productInfo : saleList) {
                 Long productId = productInfo.getProductId();
                 int quantity = productInfo.getQuantity();
+                String imgUrl = productRepository.findById(productId).get().getMainPicturePath();
+                String productName = productRepository.findById(productId).get().getName();
+                int price = productRepository.findById(productId).get().getPrice();
                 Long sellerId = productRepository.findById(productId)
                         .map(Product::getSellerId)
                         .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. ID: " + productId));
@@ -432,6 +438,9 @@ public class SellerService {
                         .sellerId(sellerId)
                         .productId(productId)
                         .quantity(quantity)
+                        .imgUrl(imgUrl)
+                        .productName(productName)
+                        .price(price*quantity)
                         .memberNo(dto.getMemberNo())
                         .orderId(dto.getOrderId())
                         .approvedAt(dto.getApprovedAt())
@@ -443,6 +452,25 @@ public class SellerService {
             throw new RuntimeException("판매 내역 저장 중 오류 발생", e);
         }
     }
+
+    public List<SaleHistoryDTO> getSaleHistoryBySellerId(Long sellerId) {
+        return saleHistoryRepository.findAllBySellerIdOrderByApprovedAtDesc(sellerId)
+                .stream()
+                .map(sale -> SaleHistoryDTO.builder()
+                        .id(sale.getId())
+                        .sellerId(sale.getSellerId())
+                        .productId(sale.getProductId())
+                        .quantity(sale.getQuantity())
+                        .imgUrl(sale.getImgUrl())
+                        .productName(sale.getProductName())
+                        .price(sale.getPrice())
+                        .memberNo(sale.getMemberNo())
+                        .orderId(sale.getOrderId())
+                        .approvedAt(sale.getApprovedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
 
     // JSON 데이터를 매핑할 DTO 클래스 (내부 클래스 혹은 별도 파일)
     private static class ProductInfo {

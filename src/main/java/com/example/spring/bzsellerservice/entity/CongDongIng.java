@@ -36,12 +36,18 @@ public class CongDongIng {
     // startAt: 생성 시 현재 시간 설정
     private LocalDateTime startAt = LocalDateTime.now();
 
+    // "ing", "finish", "cancel"
+    private String state;
+
+    private String isPaid;
+
     @Builder
-    public CongDongIng(Long productId, String condition, String congs) {
+    public CongDongIng(Long productId, String condition, String congs, String state) {
         this.productId = productId;
         this.condition = condition;
         this.congs = congs;
         this.startAt = LocalDateTime.now();
+        this.state=state;
     }
 
     // JSON 변환 메서드 (ObjectMapper 활용)
