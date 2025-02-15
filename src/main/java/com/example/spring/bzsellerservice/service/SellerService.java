@@ -471,6 +471,11 @@ public class SellerService {
                 .collect(Collectors.toList());
     }
 
+    public Page<ProdReadResponseDTO> findAllBySellerId(Pageable pageable, Long sellerId) {
+        return productRepository.findAllBySellerId(pageable, sellerId)
+                .map(Product::toProdReadResponseDTO);
+    }
+
 
     // JSON 데이터를 매핑할 DTO 클래스 (내부 클래스 혹은 별도 파일)
     private static class ProductInfo {

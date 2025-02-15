@@ -1,6 +1,7 @@
 package com.example.spring.bzsellerservice.repository;
 
 
+import com.example.spring.bzsellerservice.dto.product.ProdReadResponseDTO;
 import com.example.spring.bzsellerservice.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,4 +15,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findById(Long id);
     Page<Product> findAll(Pageable pageable);
     Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<Product> findAllBySellerId(Pageable pageable, Long sellerId);
 }

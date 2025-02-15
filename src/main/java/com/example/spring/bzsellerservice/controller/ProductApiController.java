@@ -55,6 +55,22 @@ public class ProductApiController {
         return productPage;
     }
 
+    @GetMapping("/myShop")
+    Page<ProdReadResponseDTO> findAllBySellerId(
+            @RequestParam("page") int page,
+            @RequestParam("size") int size,
+            @RequestParam Long sellerId){
+
+        // 페이징 처리
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+
+        // 서비스 호출
+        Page<ProdReadResponseDTO> productPage = sellerService.findAllBySellerId(pageable, sellerId);
+
+        return productPage;
+
+    }
+
     // 판매자가 판매하는 상품들
     @GetMapping("/myMarket")
     Page<ProdReadResponseDTO> loadMyProduct(
